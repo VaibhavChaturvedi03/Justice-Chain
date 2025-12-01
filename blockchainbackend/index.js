@@ -14,7 +14,7 @@ const PINATA_SECRET_API_KEY = 'af5c1aec92580ed58c924a2b7fa4c8cb4688c463071e35359
 const PRIVATE_KEY = 'a3a711b3ce1f86a929dcc4ed6412ba8b9631edeb261309e97d3fcbfcad35a0f5';
 const RPC_URL = 'https://sepolia.infura.io/v3/542f1eaa832d48f7b99c34caca33add7';
 const CONTRACT_ADDRESS = '0xF23133f1cd75C8AF6dEe73389BbB4C327697B82D';
-const PORT = 4000;
+const PORT = 3000;
 
 const abi = JSON.parse(fs.readFileSync('./JusticeChainABI.json', 'utf8'));
 

@@ -15,10 +15,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api', firRoutes);
 
-mongoose.connect(process.env.MONGO_URL, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-})
+mongoose.connect(process.env.MONGO_URL)
 .then(() => {
     console.log('MongoDB connected');
     app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
