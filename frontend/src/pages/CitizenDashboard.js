@@ -228,6 +228,35 @@ const CitizenDashboard = () => {
                       <p className="text-xs text-gray-500">Filed: {fir.filedDate}</p>
                       <p className="text-xs text-gray-500">Last Updated: {fir.lastUpdated}</p>
                     </div>
+                    <div className="ml-4 flex items-center space-x-2">
+                      {fir.serverId ? (
+                        <button
+                          onClick={async () => {
+                            try {
+                              const resp = await fetch(`http://localhost:4000/api/downloadFIR/${fir.serverId}`);
+                              if (!resp.ok) throw new Error('Download failed');
+                              const blob = await resp.blob();
+                              const url = window.URL.createObjectURL(blob);
+                              const a = document.createElement('a');
+                              a.href = url;
+                              a.download = `${fir.firNumber || 'fir'}.pdf`;
+                              document.body.appendChild(a);
+                              a.click();
+                              a.remove();
+                              window.URL.revokeObjectURL(url);
+                            } catch (err) {
+                              console.error('Download error:', err);
+                              alert('Failed to download FIR PDF.');
+                            }
+                          }}
+                          className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
+                        >
+                          Download PDF
+                        </button>
+                      ) : (
+                        <button disabled className="bg-gray-200 text-gray-500 px-3 py-1 rounded text-sm">No PDF</button>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

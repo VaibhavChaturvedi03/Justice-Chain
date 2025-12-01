@@ -277,7 +277,7 @@ const FileFIR = () => {
     console.log("Saving FIR locally:", firDataWithUser);
 
 
-    FIRStorage.saveFIR(firDataWithUser);
+    // Save on server (MongoDB). local storage will be updated from server response.
 
 
     try {
@@ -299,6 +299,10 @@ const FileFIR = () => {
       alert("FIR SUBMITTED")
 
       if (result.success) {
+        // Save the server-record into local storage (preserve server id)
+        if (result.fir) {
+          FIRStorage.addFIRFromServer(result.fir);
+        }
 
         // Reset form after success:
         setFormData({

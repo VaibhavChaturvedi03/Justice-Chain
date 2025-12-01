@@ -200,6 +200,56 @@ export class FIRStorage {
     }
   }
 
+  // Add FIR object returned from server into localStorage (preserve server id)
+  static addFIRFromServer(fir) {
+    try {
+      const existingFIRs = this.getAllFIRs();
+
+      const newFIR = {
+        id: fir._id || fir.id || this.generateCaseId(),
+        serverId: fir._id || null,
+        firNumber: fir.firNumber || this.generateFIRNumber(),
+        fullName: fir.fullName,
+        fatherName: fir.fatherName,
+        age: fir.age,
+        gender: fir.gender,
+        occupation: fir.occupation,
+        address: fir.address,
+        city: fir.city,
+        state: fir.state,
+        pincode: fir.pincode,
+        phone: fir.phone,
+        email: fir.email,
+        idType: fir.idType,
+        idNumber: fir.idNumber,
+        incidentType: fir.incidentType,
+        incidentDate: fir.incidentDate,
+        incidentTime: fir.incidentTime,
+        incidentLocation: fir.incidentLocation,
+        incidentDescription: fir.incidentDescription,
+        suspectDetails: fir.suspectDetails,
+        witnessDetails: fir.witnessDetails,
+        evidenceDescription: fir.evidenceDescription,
+        mediaFiles: fir.mediaFiles || [],
+        severity: fir.severity,
+        urgencyLevel: fir.urgencyLevel,
+        filedByUser: fir.filedByUser,
+        status: fir.status || 'FIR Registered',
+        filedDate: fir.filedDate || new Date().toISOString().split('T')[0],
+        lastUpdated: fir.lastUpdated || new Date().toISOString().split('T')[0],
+        timeline: fir.timeline || []
+      };
+
+      const updatedFIRs = [...existingFIRs, newFIR];
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(updatedFIRs));
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error adding server FIR:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
   // Clear all data (for testing purposes)
   static clearAllData() {
     localStorage.removeItem(this.STORAGE_KEY);
