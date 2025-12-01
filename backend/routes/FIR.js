@@ -9,7 +9,6 @@ dotenv.config();
 const router = express.Router();
 const FIR = require('../models/fir');
 
-// Helper to generate FIR number
 function generateFIRNumber() {
     const year = new Date().getFullYear();
     const timestamp = Date.now();
@@ -17,16 +16,13 @@ function generateFIRNumber() {
     return `FIR${year}${random}${timestamp.toString().slice(-6)}`;
 }
 
-// Ensure pdf directory exists
 const pdfDir = path.join(__dirname, '..', 'fir_pdfs');
 if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir, { recursive: true });
 
-// Accept JSON FIR payload and save to MongoDB, generate PDF
 router.post('/uploadFIR', async (req, res) => {
     try {
         const data = req.body;
 
-        // Generate server-side FIR number
         const firNumber = generateFIRNumber();
 
         const newFIR = new FIR({
@@ -44,7 +40,6 @@ router.post('/uploadFIR', async (req, res) => {
 
         const saved = await newFIR.save();
 
-        // Generate PDF
         const pdfPath = path.join(pdfDir, `fir_${saved._id}.pdf`);
         const doc = new PDFDocument({ autoFirstPage: true });
         const stream = fs.createWriteStream(pdfPath);
@@ -88,13 +83,12 @@ router.post('/uploadFIR', async (req, res) => {
 
         doc.end();
 
-        // Wait for stream to finish
         await new Promise((resolve, reject) => {
             stream.on('finish', resolve);
             stream.on('error', reject);
         });
 
-        saved.pdfPath = `/api/downloadFIR/${saved._id}`; // logical download path
+        saved.pdfPath = `/api/downloadFIR/${saved._id}`; 
         await saved.save();
 
         return res.json({ success: true, fir: saved });
@@ -104,7 +98,6 @@ router.post('/uploadFIR', async (req, res) => {
     }
 });
 
-// Download endpoint — streams the generated PDF
 router.get('/downloadFIR/:id', async (req, res) => {
     try {
         const id = req.params.id;

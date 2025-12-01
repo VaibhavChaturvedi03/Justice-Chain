@@ -10,7 +10,6 @@ const CitizenDashboard = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check authentication
     const authUser = AuthService.isAuthenticated('citizen');
     if (!authUser) {
       navigate('/citizen-login');
@@ -18,12 +17,10 @@ const CitizenDashboard = () => {
     }
     setUser(authUser);
 
-    // Load user's FIRs
     const allFIRs = FIRStorage.getAllFIRs();
     const myFIRs = allFIRs.filter(fir => fir.email === authUser.email);
     setUserFIRs(myFIRs);
 
-    // Calculate stats
     const stats = {
       total: myFIRs.length,
       pending: myFIRs.filter(fir => fir.status === 'FIR Registered').length,
