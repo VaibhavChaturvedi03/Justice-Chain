@@ -58,11 +58,11 @@ router.post('/uploadFIR', async (req, res) => {
         doc.moveDown();
 
         doc.moveDown(0.2);
-        doc.fontSize(12).font('Helvetica-Bold').text('2. FIR Metadata');
+        const leftX = doc.page.margins.left;
+        const midX = leftX + 260;
+        doc.fontSize(12).font('Helvetica-Bold').text('2. FIR Metadata', leftX, doc.y);
         doc.moveDown(0.2);
         const metaStartY = doc.y;
-        const leftX = doc.x;
-        const midX = leftX + 260;
 
         function ensureSpace(lines = 1) {
             const lineHeight = 14 * lines;
@@ -77,6 +77,25 @@ router.post('/uploadFIR', async (req, res) => {
             doc.moveDown(1.6);
         }
 
+        const rightX = midX + 10;
+        const rightWidth = doc.page.width - doc.page.margins.right - rightX;
+
+        function rightTitle(text) {
+            ensureSpace(1);
+            doc.font('Helvetica-Bold').fontSize(12).text(text, rightX, doc.y, { width: rightWidth });
+            doc.moveDown(0.2);
+        }
+
+        function rightList(items) {
+            ensureSpace(items.length * 1.2);
+            doc.font('Helvetica').fontSize(11);
+            for (const it of items) {
+                ensureSpace(1);
+                doc.text('• ' + it, rightX, doc.y, { width: rightWidth });
+                doc.moveDown(0.3);
+            }
+        }
+
         twoCol('FIR ID', saved._id.toString());
         twoCol('FIR Number', saved.firNumber || '-');
         twoCol('Date & Time of Filing', filedDate);
@@ -84,8 +103,7 @@ router.post('/uploadFIR', async (req, res) => {
         twoCol('Blockchain Tx Hash', saved.txHash || 'Tx not available');
         twoCol('Severity Score', saved.severityScore != null ? saved.severityScore : 'N/A');
 
-        doc.moveDown(0.5);
-        doc.fontSize(12).font('Helvetica-Bold').text('3. Complainant / Personal Information');
+        doc.fontSize(12).font('Helvetica-Bold').text('3. Complainant / Personal Information', leftX, doc.y);
         doc.moveDown(0.2);
         doc.fontSize(11).font('Helvetica').list([
             `Full Name: ${saved.fullName || '-'}`,
@@ -101,20 +119,18 @@ router.post('/uploadFIR', async (req, res) => {
             `Pincode: ${saved.pincode || '-'}`,
             `ID Type: ${saved.idType || '-'}`,
             `ID Number: ${saved.idNumber || '-'}`
-        ], { bulletRadius: 2 });
-
-        // small spacer after list
+        ], leftX, doc.y, { bulletRadius: 2 });
         doc.moveDown(0.4);
 
         doc.moveDown(0.5);
-        doc.fontSize(12).font('Helvetica-Bold').text('4. Incident Details');
+        doc.fontSize(12).font('Helvetica-Bold').text('4. Incident Details', leftX, doc.y);
         doc.moveDown(0.2);
         doc.fontSize(11).font('Helvetica').list([
             `Type of Incident: ${saved.incidentType || '-'}`,
             `Date of Incident: ${saved.incidentDate || '-'}`,
             `Time of Incident: ${saved.incidentTime || '-'}`,
             `Location of Incident: ${saved.incidentLocation || '-'}`
-        ], { bulletRadius: 2 });
+        ], leftX, doc.y, { bulletRadius: 2 });
         doc.moveDown(0.3);
         doc.fontSize(11).font('Helvetica-Bold').text('Incident Description:');
         doc.moveDown(0.1);
@@ -142,10 +158,10 @@ router.post('/uploadFIR', async (req, res) => {
             doc.moveDown(0.2);
         }
         if (saved.evidenceFiles && Array.isArray(saved.evidenceFiles) && saved.evidenceFiles.length) {
-            doc.fontSize(11).font('Helvetica-Bold').text('Evidence Attachments:');
+            doc.fontSize(11).font('Helvetica-Bold').text('Evidence Attachments:', leftX, doc.y);
             doc.fontSize(10).font('Helvetica');
             saved.evidenceFiles.forEach(f => {
-                doc.list([`${f.filename || 'file'} - ${f.ipfs || f.cid || 'IPFS CID not available'}`], { bulletRadius: 2 });
+                doc.list([`${f.filename || 'file'} - ${f.ipfs || f.cid || 'IPFS CID not available'}`], leftX, doc.y, { bulletRadius: 2 });
             });
             doc.moveDown(0.2);
         }
@@ -160,33 +176,36 @@ router.post('/uploadFIR', async (req, res) => {
         doc.moveDown(0.4);
         doc.fontSize(12).font('Helvetica-Bold').text('7. Blockchain Verification Section');
         doc.moveDown(0.2);
-        // Two-column rows for verification fields
         twoCol('Smart Contract Name', 'JusticeChain');
         twoCol('Network', process.env.BLOCKCHAIN_NETWORK || 'Ethereum / Polygon / Sepolia Testnet');
         twoCol('Smart Contract Address', saved.contractAddress || (process.env.CONTRACT_ADDRESS || '0x...'));
         twoCol('IPFS Storage', 'FIR + Evidence stored on decentralized IPFS');
         twoCol('Tamper-Proof Guarantee', 'Yes');
         ensureSpace(3);
-        doc.fontSize(9).font('Helvetica').text('This FIR has been cryptographically recorded on blockchain. Any modification attempt will result in a new transaction visible to the public, ensuring full transparency.');
+        doc.fontSize(9).font('Helvetica').text('This FIR has been cryptographically recorded on blockchain. Any modification attempt will result in a new transaction visible to the public, ensuring full transparency.', rightX, doc.y, { width: rightWidth });
 
         doc.moveDown(0.4);
-        doc.fontSize(12).font('Helvetica-Bold').text('8. Status & Actions');
-        doc.moveDown(0.2);
         const status = (saved.timeline && saved.timeline.length) ? saved.timeline[0].status : 'FIR Filed / Under Review';
         const officer = (saved.timeline && saved.timeline.length) ? saved.timeline[0].officer : 'Pending';
-        doc.fontSize(11).font('Helvetica').text(`Initially:`);
-        doc.fontSize(11).font('Helvetica').text(`Status: ${status}`);
-        doc.fontSize(11).font('Helvetica').text(`Assigned Officer: ${officer}`);
+        doc.fontSize(12).font('Helvetica-Bold').text('8. Status & Actions', leftX, doc.y);
         doc.moveDown(0.2);
-        doc.fontSize(10).font('Helvetica-Oblique').text('Next Action: Awaiting Police Assignment');
-
+        doc.fontSize(11).font('Helvetica').list([
+            'Initially:',
+            `Status: ${status}`,
+            `Assigned Officer: ${officer}`,
+            'Next Action: Awaiting Police Assignment'
+        ], leftX, doc.y, { bulletRadius: 2 });
         doc.moveDown(0.4);
-        doc.fontSize(12).font('Helvetica-Bold').text('9. Signatures');
+
+        doc.fontSize(12).font('Helvetica-Bold').text('9. Signatures', leftX, doc.y);
         doc.moveDown(0.2);
-        doc.fontSize(11).font('Helvetica').text('Since it is digitally generated:');
-        doc.fontSize(11).font('Helvetica').text('Digitally Signed by: JusticeChain System');
-        doc.fontSize(11).font('Helvetica').text('No manual signature required');
-        doc.fontSize(11).font('Helvetica').text('Complainant acknowledgement: Submitted electronically');
+        doc.fontSize(11).font('Helvetica').list([
+            'Since it is digitally generated:',
+            'Digitally Signed by: JusticeChain System',
+            'No manual signature required',
+            'Complainant acknowledgement: Submitted electronically'
+        ], leftX, doc.y, { bulletRadius: 2 });
+        doc.moveDown(0.4);
 
         doc.moveDown(0.6);
         doc.fontSize(9).font('Helvetica-Oblique').text('This FIR is generated using JusticeChain - a decentralized FIR management solution. Tampering, deletion, or unauthorized modification of this record is not possible. Powered by Blockchain and IPFS.');
