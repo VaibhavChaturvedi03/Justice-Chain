@@ -64,20 +64,25 @@ router.post('/uploadFIR', async (req, res) => {
         const leftX = doc.x;
         const midX = leftX + 260;
 
-        function kv(key, value, x, y) {
-            doc.font('Helvetica-Bold').fontSize(10).text(key, x, y);
-            doc.font('Helvetica').fontSize(10).text(value || '-', x + 0, y + 12);
+        function ensureSpace(lines = 1) {
+            const lineHeight = 14 * lines;
+            if (doc.y + lineHeight > doc.page.height - doc.page.margins.bottom) doc.addPage();
         }
 
-        kv('FIR ID', saved._id.toString(), leftX, doc.y);
-        kv('FIR Number', saved.firNumber || '-', midX, doc.y);
-        doc.moveDown(3);
-        kv('Date & Time of Filing', filedDate, leftX, doc.y);
-        kv('IPFS Hash', saved.ipfsHash || 'CID not available', midX, doc.y);
-        doc.moveDown(3);
-        kv('Blockchain Tx Hash', saved.txHash || 'Tx not available', leftX, doc.y);
-        kv('Severity Score', saved.severityScore != null ? saved.severityScore : 'N/A', midX, doc.y);
-        doc.moveDown();
+        function twoCol(key, value) {
+            ensureSpace(2);
+            const y = doc.y;
+            doc.font('Helvetica-Bold').fontSize(10).text(key, leftX, y);
+            doc.font('Helvetica').fontSize(10).text(value || '-', midX, y);
+            doc.moveDown(1.6);
+        }
+
+        twoCol('FIR ID', saved._id.toString());
+        twoCol('FIR Number', saved.firNumber || '-');
+        twoCol('Date & Time of Filing', filedDate);
+        twoCol('IPFS Hash', saved.ipfsHash || 'CID not available');
+        twoCol('Blockchain Tx Hash', saved.txHash || 'Tx not available');
+        twoCol('Severity Score', saved.severityScore != null ? saved.severityScore : 'N/A');
 
         doc.moveDown(0.5);
         doc.fontSize(12).font('Helvetica-Bold').text('3. Complainant / Personal Information');
@@ -97,6 +102,9 @@ router.post('/uploadFIR', async (req, res) => {
             `ID Type: ${saved.idType || '-'}`,
             `ID Number: ${saved.idNumber || '-'}`
         ], { bulletRadius: 2 });
+
+        // small spacer after list
+        doc.moveDown(0.4);
 
         doc.moveDown(0.5);
         doc.fontSize(12).font('Helvetica-Bold').text('4. Incident Details');
@@ -152,18 +160,13 @@ router.post('/uploadFIR', async (req, res) => {
         doc.moveDown(0.4);
         doc.fontSize(12).font('Helvetica-Bold').text('7. Blockchain Verification Section');
         doc.moveDown(0.2);
-        doc.fontSize(10).font('Helvetica-Bold').text('Field');
-        doc.fontSize(10).font('Helvetica-Bold').text('Value', midX, doc.y - 12);
-        doc.moveDown(0.2);
-        doc.fontSize(10).font('Helvetica').text('Smart Contract Name: JusticeChain');
-        doc.fontSize(10).font('Helvetica').text(`Network: ${process.env.BLOCKCHAIN_NETWORK || 'Ethereum / Polygon / Sepolia Testnet'}`, midX, doc.y - 12);
-        doc.moveDown(0.1);
-        doc.fontSize(10).font('Helvetica').text('Smart Contract Address:', leftX, doc.y);
-        doc.fontSize(10).font('Helvetica').text(saved.contractAddress || (process.env.CONTRACT_ADDRESS || '0x...'), midX, doc.y - 12);
-        doc.moveDown(0.1);
-        doc.fontSize(10).font('Helvetica').text('IPFS Storage: FIR + Evidence stored on decentralized IPFS');
-        doc.fontSize(10).font('Helvetica').text('Tamper-Proof Guarantee: ✔ Yes', midX, doc.y - 12);
-        doc.moveDown(0.3);
+        // Two-column rows for verification fields
+        twoCol('Smart Contract Name', 'JusticeChain');
+        twoCol('Network', process.env.BLOCKCHAIN_NETWORK || 'Ethereum / Polygon / Sepolia Testnet');
+        twoCol('Smart Contract Address', saved.contractAddress || (process.env.CONTRACT_ADDRESS || '0x...'));
+        twoCol('IPFS Storage', 'FIR + Evidence stored on decentralized IPFS');
+        twoCol('Tamper-Proof Guarantee', 'Yes');
+        ensureSpace(3);
         doc.fontSize(9).font('Helvetica').text('This FIR has been cryptographically recorded on blockchain. Any modification attempt will result in a new transaction visible to the public, ensuring full transparency.');
 
         doc.moveDown(0.4);
