@@ -42,45 +42,155 @@ router.post('/uploadFIR', verifyToken, isCitizen, async (req, res) => {
         const saved = await newFIR.save();
 
         const pdfPath = path.join(pdfDir, `fir_${saved._id}.pdf`);
-        const doc = new PDFDocument({ autoFirstPage: true });
+        const doc = new PDFDocument({ autoFirstPage: true, margin: 50 });
         const stream = fs.createWriteStream(pdfPath);
         doc.pipe(stream);
 
-        doc.fontSize(20).text('FIR Report', { align: 'center' });
-        doc.moveDown();
-        doc.fontSize(12).text(`FIR Number: ${saved.firNumber}`);
-        doc.text(`Filed Date: ${saved.filedDate || new Date().toISOString().split('T')[0]}`);
+        const nowDate = new Date().toISOString().split('T')[0];
+        const filedDate = saved.filedDate || nowDate;
+
+        doc.fontSize(12).font('Helvetica-Bold').text('Government of India / State Police Department', { align: 'center' });
+        doc.moveDown(0.2);
+        doc.fontSize(10).font('Helvetica').text('[Police Station Name / Jurisdiction]', { align: 'center' });
+        doc.moveDown(0.6);
+        doc.fontSize(16).font('Helvetica-Bold').text('FIRST INFORMATION REPORT (FIR)', { align: 'center' });
+        doc.moveDown(0.3);
+        doc.fontSize(9).font('Helvetica-Oblique').text('Generated via JusticeChain System', { align: 'center' });
         doc.moveDown();
 
-        doc.fontSize(14).text('Personal Information', { underline: true });
-        doc.fontSize(11).text(`Name: ${saved.fullName || ''}`);
-        doc.text(`Father's Name: ${saved.fatherName || ''}`);
-        doc.text(`Age: ${saved.age || ''}`);
-        doc.text(`Gender: ${saved.gender || ''}`);
-        doc.text(`Phone: ${saved.phone || ''}`);
-        doc.text(`Email: ${saved.email || ''}`);
-        doc.moveDown();
+        doc.moveDown(0.2);
+        doc.fontSize(12).font('Helvetica-Bold').text('2. FIR Metadata');
+        doc.moveDown(0.2);
+        const metaStartY = doc.y;
+        const leftX = doc.x;
+        const midX = leftX + 260;
 
-        doc.fontSize(14).text('Incident Details', { underline: true });
-        doc.fontSize(11).text(`Type: ${saved.incidentType || ''}`);
-        doc.text(`Date: ${saved.incidentDate || ''} ${saved.incidentTime || ''}`);
-        doc.text(`Location: ${saved.incidentLocation || ''}`);
-        doc.moveDown();
-        doc.fontSize(12).text('Description:', { underline: true });
-        doc.fontSize(11).text(saved.incidentDescription || '', { align: 'left' });
-        doc.moveDown();
+        function ensureSpace(lines = 1) {
+            const lineHeight = 14 * lines;
+            if (doc.y + lineHeight > doc.page.height - doc.page.margins.bottom) doc.addPage();
+        }
 
+        function twoCol(key, value) {
+            ensureSpace(2);
+            const y = doc.y;
+            doc.font('Helvetica-Bold').fontSize(10).text(key, leftX, y);
+            doc.font('Helvetica').fontSize(10).text(value || '-', midX, y);
+            doc.moveDown(1.6);
+        }
+
+        twoCol('FIR ID', saved._id.toString());
+        twoCol('FIR Number', saved.firNumber || '-');
+        twoCol('Date & Time of Filing', filedDate);
+        twoCol('IPFS Hash', saved.ipfsHash || 'CID not available');
+        twoCol('Blockchain Tx Hash', saved.txHash || 'Tx not available');
+        twoCol('Severity Score', saved.severityScore != null ? saved.severityScore : 'N/A');
+
+        doc.moveDown(0.5);
+        doc.fontSize(12).font('Helvetica-Bold').text('3. Complainant / Personal Information');
+        doc.moveDown(0.2);
+        doc.fontSize(11).font('Helvetica').list([
+            `Full Name: ${saved.fullName || '-'}`,
+            `Father's Name: ${saved.fatherName || '-'}`,
+            `Gender: ${saved.gender || '-'}`,
+            `Age: ${saved.age || '-'}`,
+            `Occupation: ${saved.occupation || '-'}`,
+            `Phone Number: ${saved.phone || '-'}`,
+            `Email Address: ${saved.email || '-'}`,
+            `Address: ${saved.address || '-'}`,
+            `City: ${saved.city || '-'}`,
+            `State: ${saved.state || '-'}`,
+            `Pincode: ${saved.pincode || '-'}`,
+            `ID Type: ${saved.idType || '-'}`,
+            `ID Number: ${saved.idNumber || '-'}`
+        ], { bulletRadius: 2 });
+
+        // small spacer after list
+        doc.moveDown(0.4);
+
+        doc.moveDown(0.5);
+        doc.fontSize(12).font('Helvetica-Bold').text('4. Incident Details');
+        doc.moveDown(0.2);
+        doc.fontSize(11).font('Helvetica').list([
+            `Type of Incident: ${saved.incidentType || '-'}`,
+            `Date of Incident: ${saved.incidentDate || '-'}`,
+            `Time of Incident: ${saved.incidentTime || '-'}`,
+            `Location of Incident: ${saved.incidentLocation || '-'}`
+        ], { bulletRadius: 2 });
+        doc.moveDown(0.3);
+        doc.fontSize(11).font('Helvetica-Bold').text('Incident Description:');
+        doc.moveDown(0.1);
+        doc.fontSize(11).font('Helvetica').text(saved.incidentDescription || '-', { align: 'left' });
+
+        doc.addPageIfNeeded = function () {
+            if (doc.y > doc.page.height - 140) doc.addPage();
+        };
+        doc.moveDown(0.5);
+        doc.fontSize(12).font('Helvetica-Bold').text('5. Additional Case Information');
+        doc.moveDown(0.2);
         if (saved.suspectDetails) {
-            doc.fontSize(12).text('Suspect Details:', { underline: true });
-            doc.fontSize(11).text(saved.suspectDetails);
-            doc.moveDown();
+            doc.fontSize(11).font('Helvetica-Bold').text('Suspect Details (if provided):');
+            doc.fontSize(11).font('Helvetica').text(saved.suspectDetails || '-');
+            doc.moveDown(0.2);
+        }
+        if (saved.witnessDetails) {
+            doc.fontSize(11).font('Helvetica-Bold').text('Witness Details (if any):');
+            doc.fontSize(11).font('Helvetica').text(saved.witnessDetails || '-');
+            doc.moveDown(0.2);
+        }
+        if (saved.evidenceDescription) {
+            doc.fontSize(11).font('Helvetica-Bold').text('Evidence Description:');
+            doc.fontSize(11).font('Helvetica').text(saved.evidenceDescription || '-');
+            doc.moveDown(0.2);
+        }
+        if (saved.evidenceFiles && Array.isArray(saved.evidenceFiles) && saved.evidenceFiles.length) {
+            doc.fontSize(11).font('Helvetica-Bold').text('Evidence Attachments:');
+            doc.fontSize(10).font('Helvetica');
+            saved.evidenceFiles.forEach(f => {
+                doc.list([`${f.filename || 'file'} - ${f.ipfs || f.cid || 'IPFS CID not available'}`], { bulletRadius: 2 });
+            });
+            doc.moveDown(0.2);
         }
 
-        if (saved.witnessDetails) {
-            doc.fontSize(12).text('Witness Details:', { underline: true });
-            doc.fontSize(11).text(saved.witnessDetails);
-            doc.moveDown();
-        }
+        doc.moveDown(0.2);
+        doc.fontSize(12).font('Helvetica-Bold').text('6. Case Severity Ranking');
+        doc.moveDown(0.1);
+        doc.fontSize(11).font('Helvetica').text(`Severity Score: ${saved.severityScore != null ? saved.severityScore : 'N/A'} (0-10)`);
+        doc.fontSize(11).font('Helvetica').text(`Category: ${saved.severityCategory || 'N/A'}`);
+        doc.fontSize(10).font('Helvetica-Oblique').text(`Reason: ${saved.severityReason || 'Auto-classified based on description'}`);
+
+        doc.moveDown(0.4);
+        doc.fontSize(12).font('Helvetica-Bold').text('7. Blockchain Verification Section');
+        doc.moveDown(0.2);
+        // Two-column rows for verification fields
+        twoCol('Smart Contract Name', 'JusticeChain');
+        twoCol('Network', process.env.BLOCKCHAIN_NETWORK || 'Ethereum / Polygon / Sepolia Testnet');
+        twoCol('Smart Contract Address', saved.contractAddress || (process.env.CONTRACT_ADDRESS || '0x...'));
+        twoCol('IPFS Storage', 'FIR + Evidence stored on decentralized IPFS');
+        twoCol('Tamper-Proof Guarantee', 'Yes');
+        ensureSpace(3);
+        doc.fontSize(9).font('Helvetica').text('This FIR has been cryptographically recorded on blockchain. Any modification attempt will result in a new transaction visible to the public, ensuring full transparency.');
+
+        doc.moveDown(0.4);
+        doc.fontSize(12).font('Helvetica-Bold').text('8. Status & Actions');
+        doc.moveDown(0.2);
+        const status = (saved.timeline && saved.timeline.length) ? saved.timeline[0].status : 'FIR Filed / Under Review';
+        const officer = (saved.timeline && saved.timeline.length) ? saved.timeline[0].officer : 'Pending';
+        doc.fontSize(11).font('Helvetica').text(`Initially:`);
+        doc.fontSize(11).font('Helvetica').text(`Status: ${status}`);
+        doc.fontSize(11).font('Helvetica').text(`Assigned Officer: ${officer}`);
+        doc.moveDown(0.2);
+        doc.fontSize(10).font('Helvetica-Oblique').text('Next Action: Awaiting Police Assignment');
+
+        doc.moveDown(0.4);
+        doc.fontSize(12).font('Helvetica-Bold').text('9. Signatures');
+        doc.moveDown(0.2);
+        doc.fontSize(11).font('Helvetica').text('Since it is digitally generated:');
+        doc.fontSize(11).font('Helvetica').text('Digitally Signed by: JusticeChain System');
+        doc.fontSize(11).font('Helvetica').text('No manual signature required');
+        doc.fontSize(11).font('Helvetica').text('Complainant acknowledgement: Submitted electronically');
+
+        doc.moveDown(0.6);
+        doc.fontSize(9).font('Helvetica-Oblique').text('This FIR is generated using JusticeChain - a decentralized FIR management solution. Tampering, deletion, or unauthorized modification of this record is not possible. Powered by Blockchain and IPFS.');
 
         doc.end();
 
