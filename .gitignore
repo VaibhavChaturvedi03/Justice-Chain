@@ -1,0 +1,22 @@
+# Node
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# Caches
+.cache/
+dist/
+build/
+tmp/
+temp/
+
+# Python
+__pycache__/
+*.pyc
+
+# Environment files
+*.env
+
+# Lockfiles (optional)
+package-lock.json
+yarn.lock

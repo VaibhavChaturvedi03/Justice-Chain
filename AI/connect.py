@@ -15,16 +15,15 @@ CORS(app)
 
 client = Groq(api_key=Groq_API_KEY)
 
-@app.route('/classify' , methods = ['POST'])
-
+@app.route('/classify', methods=['POST'])
 def classify_fir():
     data = request.json
-    description = data.get("incidentDescription" , "")
+    description = data.get("incidentDescription", "")
 
     if not description:
-        return jsonify({"error" : "No description provided"}) , 400
-    
-    prompt =f"""You are a crime analysis assistant.
+        return jsonify({"error": "No description provided"}), 400
+
+    prompt = f"""You are a crime analysis assistant.
 
 Your job is to classify an FIR description into one of the following categories:
 - High: Life-threatening crimes such as murder, rape, terrorism, serious assault, bomb threats
@@ -34,42 +33,36 @@ Your job is to classify an FIR description into one of the following categories:
 Only respond with a single word: High, Medium, or Low.
 
 FIR Description: {description}
-Priority:"""
-
-
-
+Priority:
+"""
 
     try:
         response = client.chat.completions.create(
-            model = "llama3-8b-8192",
-            messages = [{"role":"user" , "content" : prompt}],
-            temperature = 0,
-            max_tokens=10            
+            model="llama-3.1-8b-instant",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0,
+            max_tokens=10
         )
 
-        priority = response.choices[0].message.content.strip()
-        print("AI Response:", response.choices[0].message.content)
-        priority = priority.lower()
-        if "high" in priority:
+        # Correct Groq response parsing
+        ai_text = response.choices[0].message.content.strip()
+        print("AI Response:", ai_text)
+
+        priority = ai_text.lower().strip()
+
+        if priority == "high":
             priority = "high"
-        elif "medium" in priority:
+        elif priority == "medium":
             priority = "medium"
-        elif "low" in priority:
-            priority = "low"
         else:
-            priority = 'low'
-        
+            priority = "low"
 
-        print("Prompt sent to AI:\n", prompt)
-        print("Full AI Response Object:\n", response)
+        return jsonify({"priority": priority})
 
-
-
-        return jsonify({"priority":priority})
     except Exception as e:
-        return jsonify({"error" : str(e)}) ,500
+        print("ERROR:", e)
+        return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
-    app.run(debug=True , port=5050)
-
-
+    app.run(debug=True, port=5050)
