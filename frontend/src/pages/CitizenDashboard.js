@@ -230,7 +230,11 @@ const CitizenDashboard = () => {
                         <button
                           onClick={async () => {
                             try {
-                              const resp = await fetch(`http://localhost:5000/api/downloadFIR/${fir.serverId}`);
+                              const resp = await fetch(`http://localhost:5000/api/downloadFIR/${fir.serverId}`, {
+                                headers: {
+                                  'Authorization': `Bearer ${user.token}`
+                                }
+                              });
                               if (!resp.ok) throw new Error('Download failed');
                               const blob = await resp.blob();
                               const url = window.URL.createObjectURL(blob);

@@ -18,13 +18,25 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Check if user is already logged in on app start
     const checkAuth = () => {
-      const citizenAuth = AuthService.isAuthenticated('citizen');
-      const adminAuth = AuthService.isAuthenticated('admin');
+      // Check if this is the first app load (not just a page refresh)
+      const isFirstLoad = !sessionStorage.getItem('app_initialized');
       
-      if (citizenAuth) {
-        setUser(citizenAuth);
-      } else if (adminAuth) {
-        setUser(adminAuth);
+      if (isFirstLoad) {
+        // First app load - clear auth and mark app as initialized
+        AuthService.logout('citizen');
+        AuthService.logout('admin');
+        sessionStorage.setItem('app_initialized', 'true');
+        setUser(null);
+      } else {
+        // Page refresh - restore auth if available
+        const citizenAuth = AuthService.isAuthenticated('citizen');
+        const adminAuth = AuthService.isAuthenticated('admin');
+        
+        if (citizenAuth) {
+          setUser(citizenAuth);
+        } else if (adminAuth) {
+          setUser(adminAuth);
+        }
       }
       
       setIsLoading(false);

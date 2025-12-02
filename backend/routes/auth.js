@@ -1,5 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');  // <-- added
 const Citizen = require('../models/citizen');
 const Admin = require('../models/admin');
 const router = express.Router();
@@ -45,7 +46,24 @@ router.post('/citizen/login', async (req, res) => {
             return res.status(400).json({ message: 'Invalid password' });
         }
 
-        res.json({ message: 'Citizen logged in successfully' });
+        // ---- ADD JWT HERE ----
+        const token = jwt.sign(
+            { id: user._id, role: "citizen" },
+            process.env.JWT_SECRET,
+            { expiresIn: "10h" }
+        );
+        // -----------------------
+
+        res.json({ 
+            message: 'Citizen logged in successfully',
+            token: token,     // <-- send token to frontend
+            user: {
+                fullName: user.fullName,
+                email: user.email,
+                phone: user.phone
+            }
+        });
+
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server error' });
@@ -91,7 +109,22 @@ router.post('/admin/login', async (req, res) => {
             return res.status(400).json({ message: 'Invalid password' });
         }
 
-        res.json({ message: 'Admin logged in successfully' });
+        // ---- ADD JWT HERE ----
+        const token = jwt.sign(
+            { id: admin._id, role: "admin" },
+            process.env.JWT_SECRET,
+            { expiresIn: "7d" }
+        );
+        // -----------------------
+
+        res.json({ 
+            message: 'Admin logged in successfully',
+            token: token,    // <-- send token
+            admin: {
+                email: admin.email
+            }
+        });
+
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server error' });
@@ -99,4 +132,3 @@ router.post('/admin/login', async (req, res) => {
 });
 
 module.exports = router;
-

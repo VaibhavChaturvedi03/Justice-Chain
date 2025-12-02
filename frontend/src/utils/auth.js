@@ -3,6 +3,24 @@ export class AuthService {
   static CITIZEN_STORAGE_KEY = 'justice_chain_citizen_auth';
   static ADMIN_STORAGE_KEY = 'justice_chain_admin_auth';
 
+  // Helper function to check if token is expired
+  static isTokenExpired(token) {
+    try {
+      if (!token) return true;
+      
+      // Parse JWT (split by '.' to get payload)
+      const parts = token.split('.');
+      if (parts.length !== 3) return true;
+      
+      const payload = JSON.parse(atob(parts[1]));
+      const expiryTime = payload.exp * 1000; // Convert to milliseconds
+      return Date.now() >= expiryTime;
+    } catch (err) {
+      console.error('Error checking token expiration:', err);
+      return true;
+    }
+  }
+
   // ---------- CITIZEN SIGNUP ----------
   static async signupCitizen(userData) {
     try {
@@ -42,6 +60,7 @@ export class AuthService {
 
       const authData = {
         email,
+        token: data.token,
         loginTime: new Date().toISOString(),
         userType: 'citizen'
       };
@@ -92,6 +111,7 @@ export class AuthService {
 
       const authData = {
         email,
+        token: data.token,
         loginTime: new Date().toISOString(),
         userType: 'admin'
       };
@@ -112,7 +132,19 @@ export class AuthService {
   static isAuthenticated(userType = 'citizen') {
     const key = userType === 'admin' ? this.ADMIN_STORAGE_KEY : this.CITIZEN_STORAGE_KEY;
     const data = localStorage.getItem(key);
-    return data ? JSON.parse(data) : null;
+    
+    if (!data) return null;
+    
+    const authData = JSON.parse(data);
+    
+    // Check if token is expired
+    if (authData.token && this.isTokenExpired(authData.token)) {
+      console.log('Token expired, clearing storage');
+      localStorage.removeItem(key);
+      return null;
+    }
+    
+    return authData;
   }
 
   static getCurrentUser(userType = 'citizen') {

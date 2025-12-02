@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const PDFDocument = require('pdfkit');
 const dotenv = require('dotenv');
+const { verifyToken, isCitizen, isAdmin } = require('../middleware/auth');
 
 dotenv.config();
 
@@ -19,7 +20,7 @@ function generateFIRNumber() {
 const pdfDir = path.join(__dirname, '..', 'fir_pdfs');
 if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir, { recursive: true });
 
-router.post('/uploadFIR', async (req, res) => {
+router.post('/uploadFIR', verifyToken, isCitizen, async (req, res) => {
     try {
         const data = req.body;
 
@@ -98,7 +99,7 @@ router.post('/uploadFIR', async (req, res) => {
     }
 });
 
-router.get('/downloadFIR/:id', async (req, res) => {
+router.get('/downloadFIR/:id', verifyToken, async (req, res) => {
     try {
         const id = req.params.id;
         const fir = await FIR.findById(id).lean();
