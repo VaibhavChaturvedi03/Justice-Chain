@@ -31,7 +31,32 @@ const FIRSchema = new mongoose.Schema({
   filedDate: { type: String, default: () => new Date().toISOString().split('T')[0] },
   lastUpdated: { type: String, default: () => new Date().toISOString().split('T')[0] },
   timeline: { type: Array, default: [] },
-  pdfPath: String
+  pdfPath: String,
+  
+  ipfsHash: String,
+  ipfsMetadata: {
+    uploadedAt: Date,
+    fileName: String,
+    contentType: String
+  },
+  
+  mediaFilesIPFS: [{
+    originalName: String,
+    ipfsHash: String,
+    size: Number,
+    mimeType: String,
+    mediaType: { type: String, enum: ['photo', 'video', 'document'], default: 'document' },
+    uploadedAt: Date,
+    pinataUrl: String 
+  }]
 }, { timestamps: true });
+
+FIRSchema.index({ firNumber: 1 });
+FIRSchema.index({ email: 1 });
+FIRSchema.index({ phone: 1 });
+FIRSchema.index({ idNumber: 1 });
+FIRSchema.index({ status: 1 });
+FIRSchema.index({ state: 1 }); 
+FIRSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('FIR', FIRSchema);
