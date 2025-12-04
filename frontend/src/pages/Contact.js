@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { showContactSuccessToast } from "../utils/toastManager";
-import { playClickSound } from "../utils/soundManager";
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -50,7 +49,6 @@ const Contact = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    playClickSound();
 
     // Simulate API call
     setTimeout(() => {
@@ -91,7 +89,6 @@ const Contact = () => {
           </p>
           <button
             onClick={() => {
-              playClickSound();
               setSubmitted(false);
               setFormData({
                 name: "",
@@ -275,36 +272,7 @@ const Contact = () => {
                   </div>
                 </div>
               </div>
-            </div>
-
-            {/* Office Hours */}
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
-                Office Hours
-              </h2>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Monday - Friday</span>
-                  <span className="font-medium">9:00 AM - 6:00 PM</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Saturday</span>
-                  <span className="font-medium">10:00 AM - 4:00 PM</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Sunday</span>
-                  <span className="font-medium">Emergency Only</span>
-                </div>
-                <div className="border-t pt-3 mt-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Emergency Support</span>
-                    <span className="font-medium text-red-600">
-                      24/7 Available
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            </div>            
           </div>
 
           {/* Contact Form */}
@@ -456,7 +424,6 @@ const Contact = () => {
                         ? "bg-gray-400 cursor-not-allowed"
                         : "bg-blue-600 hover:bg-blue-700 text-white"
                     }`}
-                    onClick={playClickSound}
                   >
                     {isSubmitting ? (
                       <div className="flex items-center justify-center">
@@ -482,7 +449,7 @@ const Contact = () => {
                         Sending Message...
                       </div>
                     ) : (
-                      <>📧 Send Message</>
+                      <>Send Message</>
                     )}
                   </button>
                 </div>
