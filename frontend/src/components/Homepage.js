@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { showAdminToast } from "../utils/toastManager";
-import { playClickSound } from "../utils/soundManager";
 
 const Homepage = () => {
   const [showAdminLogin, setShowAdminLogin] = useState(false);
@@ -82,13 +81,7 @@ const Homepage = () => {
   return (
     <div className="min-h-screen bg-gray-50 animate-page-enter">
       {/* SECTION 1: Hero & Main Actions */}
-       <div className="bg-gradient-to-b from-gray-50 to-white relative overflow-hidden min-h-screen flex items-center">
-        {/* Decorative Background Elements */}
-        <div className="absolute top-20 left-20 w-32 h-32 bg-blue-100 rounded-3xl opacity-50"></div>
-        <div className="absolute top-40 right-32 w-24 h-24 bg-blue-50 rounded-3xl opacity-50"></div>
-        <div className="absolute bottom-40 left-40 w-20 h-20 bg-gray-200 rounded-2xl opacity-50"></div>
-        <div className="absolute bottom-20 right-20 w-28 h-28 bg-gray-100 rounded-3xl opacity-50"></div>
-        
+      <div className="bg-gradient-to-b from-gray-50 to-white relative overflow-hidden min-h-screen flex items-center">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative z-10 w-full">
           <div className="text-center mb-16 hero-float">
             {/* Badge */}
@@ -96,40 +89,61 @@ const Homepage = () => {
               <div className="w-2 h-2 bg-blue-600 rounded-full mr-3"></div>
               <span className="text-blue-600 font-semibold text-sm">Blockchain-Powered Security</span>
             </div> */}
-            
+
             {/* Main Heading */}
             <h1 className="text-6xl font-bold mb-6">
               <div className="text-gray-900">JusticeChain</div>
-              <div className="text-blue-600">Tamper-Proof FIR</div>
+              <div className="" style={{ color: "#0a50c2" }}>
+                Tamper-Proof FIR
+              </div>
               <div className="text-gray-900">Management System</div>
             </h1>
-            
+
             {/* Description */}
             <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed mb-12">
-              A secure and transparent platform for filing FIRs online. Submit your complaint 24x7 
-              and track its progress in real-time through blockchain-secured records.
+              A secure and transparent platform for filing FIRs online. Submit
+              your complaint 24x7 and track its progress in real-time through
+              blockchain-secured records.
             </p>
           </div>
-          
+
           {/* Main Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-20 stagger-enhanced-1">
-            <Link 
+            <Link
               to="/file-fir"
               className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-5 rounded-2xl font-bold text-lg shadow-lg btn-enhanced hover-lift focus-indicator flex items-center transition-all duration-300"
-              onClick={playClickSound}
             >
-              <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              <svg
+                className="w-5 h-5 mr-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                />
               </svg>
               File New FIR
             </Link>
-            <Link 
+            <Link
               to="/status"
-              className="bg-orange-500 hover:bg-orange-600 text-white px-10 py-5 rounded-2xl font-bold text-lg shadow-lg btn-enhanced hover-lift focus-indicator flex items-center transition-all duration-300"
-              onClick={playClickSound}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-5 rounded-2xl font-bold text-lg shadow-lg btn-enhanced hover-lift focus-indicator flex items-center transition-all duration-300"
             >
-              <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              <svg
+                className="w-5 h-5 mr-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
               </svg>
               Track FIR Status
             </Link>
@@ -182,79 +196,135 @@ const Homepage = () => {
               {/* Services Grid */}
               <div className="p-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  
                   {/* File FIR Service */}
-                  <Link to="/file-fir" className="group" onClick={playClickSound}>
+                  <Link to="/file-fir" className="group">
                     <div className="bg-white border-2 border-gray-200 hover:border-blue-500 rounded-xl p-8 transition-all duration-300 hover:shadow-2xl hover:scale-105 h-full flex flex-col">
                       <div className="flex items-start mb-4">
                         <div className="bg-gray-100 rounded-lg p-3 mr-4 flex-shrink-0">
-                          <svg className="w-8 h-8 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          <svg
+                            className="w-8 h-8 text-gray-700"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            />
                           </svg>
                         </div>
                         <div className="flex-1">
-                          <h3 className="text-xl font-bold text-gray-900 mb-2">File FIR Online</h3>
+                          <h3 className="text-xl font-bold text-gray-900 mb-2">
+                            File FIR Online
+                          </h3>
                         </div>
                       </div>
                       <p className="text-gray-600 leading-relaxed flex-grow">
-                        Submit First Information Report. Complete the process in minutes with proper documentation.
+                        Submit First Information Report. Complete the process in
+                        minutes with proper documentation.
                       </p>
                     </div>
                   </Link>
 
                   {/* Track Status Service - Featured */}
-                  <Link to="/status" className="group" onClick={playClickSound}>
-                    <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-8 transition-all duration-300 hover:shadow-2xl hover:scale-105 text-white h-full flex flex-col">
+                  <Link to="/status" className="group">
+                    <div className="bg-white border-2 border-gray-200 hover:border-blue-500 rounded-xl p-8 transition-all duration-300 hover:shadow-2xl hover:scale-105 h-full flex flex-col">
                       <div className="flex items-start mb-4">
-                        <div className="bg-white/20 rounded-lg p-3 mr-4 flex-shrink-0">
-                          <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        <div className="bg-gray-100 rounded-lg p-3 mr-4 flex-shrink-0">
+                          <svg
+                            className="w-8 h-8 text-gray-700"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                            />
                           </svg>
                         </div>
                         <div className="flex-1">
-                          <h3 className="text-xl font-bold mb-2">Track FIR Status</h3>
+                          <h3 className="text-xl font-bold text-gray-900 mb-2">
+                            Track FIR Status
+                          </h3>
                         </div>
                       </div>
-                      <p className="text-blue-50 leading-relaxed flex-grow">
-                        Check real-time updates on investigation progress and case developments with our tracking system.
+
+                      <p className="text-gray-600 leading-relaxed flex-grow">
+                        Check real-time updates on investigation progress and
+                        case developments with our tracking system.
                       </p>
                     </div>
                   </Link>
 
                   {/* Download Forms Service */}
-                  <Link to="/resources" className="group" onClick={playClickSound}>
+                  <Link to="/resources" className="group">
                     <div className="bg-white border-2 border-gray-200 hover:border-blue-500 rounded-xl p-8 transition-all duration-300 hover:shadow-2xl hover:scale-105 h-full flex flex-col">
                       <div className="flex items-start mb-4">
                         <div className="bg-gray-100 rounded-lg p-3 mr-4 flex-shrink-0">
-                          <svg className="w-8 h-8 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          <svg
+                            className="w-8 h-8 text-gray-700"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 6v12m-6-6h12M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"
+                            />
                           </svg>
                         </div>
                         <div className="flex-1">
-                          <h3 className="text-xl font-bold text-gray-900 mb-2">Download Forms</h3>
+                          <h3 className="text-xl font-bold text-gray-900 mb-2">
+                            Find Legal Guides
+                          </h3>
                         </div>
                       </div>
+
                       <p className="text-gray-600 leading-relaxed flex-grow">
-                        Access official police forms and legal documents for offline submission and reference materials.
+                        Download essential legal guides such as:
+                        <br />• Your Rights During Investigation
+                        <br />• How to File an FIR
+                        <br />• Understanding Legal Procedures
+                        <br />• Victim Support Services
                       </p>
                     </div>
                   </Link>
 
                   {/* Contact Police Service */}
-                  <Link to="/contact" className="group" onClick={playClickSound}>
+                  <Link to="/contact" className="group">
                     <div className="bg-white border-2 border-gray-200 hover:border-blue-500 rounded-xl p-8 transition-all duration-300 hover:shadow-2xl hover:scale-105 h-full flex flex-col">
                       <div className="flex items-start mb-4">
                         <div className="bg-gray-100 rounded-lg p-3 mr-4 flex-shrink-0">
-                          <svg className="w-8 h-8 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                          <svg
+                            className="w-8 h-8 text-gray-700"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                            />
                           </svg>
                         </div>
                         <div className="flex-1">
-                          <h3 className="text-xl font-bold text-gray-900 mb-2">Contact Police</h3>
+                          <h3 className="text-xl font-bold text-gray-900 mb-2">
+                            Contact Police
+                          </h3>
                         </div>
                       </div>
                       <p className="text-gray-600 leading-relaxed flex-grow">
-                        Find nearest police station, contact details and officer information.Get direct assistance and support.
+                        Find nearest police station, contact details and officer
+                        information.Get direct assistance and support.
                       </p>
                     </div>
                   </Link>
@@ -263,7 +333,6 @@ const Homepage = () => {
             </div>
 
             {/* Important Notice */}
-            
           </div>
 
           {/* SECTION 3: Sidebar (Right - 1/3 width) */}
@@ -349,7 +418,6 @@ const Homepage = () => {
                     <button
                       type="submit"
                       className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-semibold btn-enhanced focus-indicator"
-                      onClick={playClickSound}
                     >
                       Login
                     </button>
@@ -396,105 +464,6 @@ const Homepage = () => {
             </div>
           </div>
         </div>
-
-        {/* SECTION 4: Quick Links Footer */}
-        <div className="mt-16 bg-white border-2 border-gray-200 rounded-xl p-8 shadow-sm animate-fade-in">
-          <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center border-b border-gray-200 pb-4">
-            Quick Links
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <Link
-              to="https://www.passportindia.gov.in/psp/Police"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="quick-link-enhanced text-blue-600 hover:text-blue-800 font-medium flex items-center p-4 bg-blue-50 rounded-lg focus-indicator"
-            >
-              <div className="service-icon mr-3">
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                  />
-                </svg>
-              </div>
-              Find Police Station
-            </Link>
-            <Link
-              to="/resources"
-              className="quick-link-enhanced text-blue-600 hover:text-blue-800 font-medium flex items-center p-4 bg-blue-50 rounded-lg focus-indicator"
-            >
-              <div className="service-icon mr-3">
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-              </div>
-              Download Forms
-            </Link>
-            <Link
-              to="/resources"
-              state={{ openTab: "faq" }}
-              className="quick-link-enhanced text-blue-600 hover:text-blue-800 font-medium flex items-center p-4 bg-blue-50 rounded-lg focus-indicator"
-            >
-              <div className="service-icon mr-3">
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              FAQ
-            </Link>
-            <Link
-              to="/contact"
-              className="quick-link-enhanced text-blue-600 hover:text-blue-800 font-medium flex items-center p-4 bg-blue-50 rounded-lg focus-indicator"
-            >
-              <div className="service-icon mr-3">
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                  />
-                </svg>
-              </div>
-              Contact Us
-            </Link>
-          </div>
-        </div>
-
-        {/* Government Footer Info */}
-      
       </div>
     </div>
   );
