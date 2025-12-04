@@ -494,12 +494,7 @@ const Homepage = () => {
         </div>
 
         {/* Government Footer Info */}
-        <div className="mt-12 text-center text-sm text-gray-600 border-t border-gray-200 pt-8">
-          <p className="mb-2 font-medium">
-            This portal is developed and maintained by the Ministry of Home
-            Affairs, Government of India
-          </p>
-        </div>
+      
       </div>
     </div>
   );
