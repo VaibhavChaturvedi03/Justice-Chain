@@ -1,21 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { FIRStorage } from '../utils/firStorage';
+import { useAuth } from '../contexts/AuthContext';
 
 const TrackStatus = () => {
+  const { user } = useAuth();
   const [searchType, setSearchType] = useState('fir');
   const [searchValue, setSearchValue] = useState('');
   const [searchResult, setSearchResult] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [mediaFiles, setMediaFiles] = useState([]);
+  const [loadingMedia, setLoadingMedia] = useState(false);
 
-  // Initialize sample data on component mount
+  // Load media files when FIR is found
   useEffect(() => {
-    try {
-      FIRStorage.initializeSampleData();
-    } catch (error) {
-      console.error('Error initializing sample data:', error);
+    if (searchResult && searchResult._id) {
+      loadMediaFiles(searchResult._id);
     }
-  }, []);
+  }, [searchResult]);
+
+  const loadMediaFiles = async (firId) => {
+    setLoadingMedia(true);
+    try {
+      const files = await FIRStorage.getMediaFiles(firId);
+      setMediaFiles(files);
+    } catch (error) {
+      console.error('Error loading media files:', error);
+      setMediaFiles([]);
+    } finally {
+      setLoadingMedia(false);
+    }
+  };
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -24,20 +39,20 @@ const TrackStatus = () => {
     setIsSearching(true);
     setHasSearched(false);
     
-    // Search in localStorage
-    setTimeout(() => {
-      try {
-        const result = FIRStorage.searchFIR(searchType, searchValue.trim());
-        setSearchResult(result);
-        setHasSearched(true);
-        setIsSearching(false);
-      } catch (error) {
-        console.error('Search error:', error);
-        setSearchResult(null);
-        setHasSearched(true);
-        setIsSearching(false);
-      }
-    }, 1500);
+    try {
+      // Get token from user context
+      const token = user?.token || localStorage.getItem('token');
+      
+      const result = await FIRStorage.searchFIR(searchType, searchValue.trim(), token);
+      setSearchResult(result);
+      setHasSearched(true);
+    } catch (error) {
+      console.error('Search error:', error);
+      setSearchResult(null);
+      setHasSearched(true);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   const getStatusColor = (status) => {
@@ -211,6 +226,67 @@ const TrackStatus = () => {
                 }
               </div>
             </div>
+
+            {/* Media Files / Evidence */}
+            {mediaFiles && mediaFiles.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-lg p-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">📎 Attached Evidence Files</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {mediaFiles.map((media, index) => (
+                    <div key={index} className="bg-gray-50 rounded-lg p-4 hover:shadow-lg transition-shadow">
+                      <div className="flex items-center mb-3">
+                        {media.mediaType === 'photo' && (
+                          <svg className="h-6 w-6 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                        {media.mediaType === 'video' && (
+                          <svg className="h-6 w-6 text-blue-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                          </svg>
+                        )}
+                        {media.mediaType === 'document' && (
+                          <svg className="h-6 w-6 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                        <span className="text-xs font-medium text-gray-600 uppercase">{media.mediaType || 'File'}</span>
+                      </div>
+                      <p className="font-medium text-gray-900 truncate" title={media.originalName}>{media.originalName}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {new Date(media.uploadedAt).toLocaleDateString()}
+                      </p>
+                      {media.size && (
+                        <p className="text-xs text-gray-500">
+                          Size: {(media.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      )}
+                      {media.pinataUrl && (
+                        <a
+                          href={media.pinataUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-3 inline-block px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded hover:bg-blue-200 transition-colors"
+                        >
+                          View File
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Loading Media */}
+            {loadingMedia && (
+              <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
+                <svg className="animate-spin h-8 w-8 text-blue-600 mx-auto mb-4" fill="none" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25"></circle>
+                  <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"></path>
+                </svg>
+                <p className="text-gray-600">Loading evidence files...</p>
+              </div>
+            )}
 
             {/* Next Steps */}
             <div className="bg-blue-50 rounded-2xl p-8">

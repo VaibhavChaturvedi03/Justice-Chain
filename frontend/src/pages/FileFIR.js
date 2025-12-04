@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { FIRStorage } from '../utils/firStorage';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -10,7 +9,6 @@ const FileFIR = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    // Personal Information - Pre-filled from logged in user
     fullName: '',
     fatherName: '',
     age: '',
@@ -262,9 +260,10 @@ const FileFIR = () => {
     }
 
   
-
+    // Create FIR data without mediaFiles (files will be uploaded separately)
     const firDataWithUser = {
       ...formData,
+      mediaFiles: [],  // Don't include base64 files in JSON
       severity,
       urgencyLevel,
       filedByUser: {
@@ -274,11 +273,7 @@ const FileFIR = () => {
         loginTime: user.loginTime
       }
     };
-    console.log("Saving FIR locally:", firDataWithUser);
-
-
-    // Save on server (MongoDB). local storage will be updated from server response.
-
+    console.log("Submitting FIR to MongoDB and Pinata:", firDataWithUser);
 
     try {
       const response = await fetch('http://localhost:5000/api/uploadFIR', {
@@ -291,21 +286,52 @@ const FileFIR = () => {
       });
 
       if (!response.ok) {
-        // If server returned non-200 status, read text and show
         const errorText = await response.text();
         throw new Error(`Server error ${response.status}: ${errorText}`);
       }
 
       const result = await response.json();
-      alert("FIR SUBMITTED")
 
-      if (result.success) {
-        // Save the server-record into local storage (preserve server id)
-        if (result.fir) {
-          FIRStorage.addFIRFromServer(result.fir);
+      if (result.success && result.fir) {
+        const firId = result.fir._id;
+        const firNumber = result.fir.firNumber;
+        
+        alert(`✅ FIR SUBMITTED\nFIR Number: ${firNumber}\nNow uploading media files to Pinata...`);
+
+        // Upload media files to Pinata if any exist
+        if (formData.mediaFiles.length > 0) {
+          const mediaFormData = new FormData();
+          
+          // Convert base64 files back to Blob objects
+          for (const file of formData.mediaFiles) {
+            const blob = await fetch(file.data).then(res => res.blob());
+            mediaFormData.append('files', blob, file.name);
+          }
+
+          try {
+            const mediaResponse = await fetch(`http://localhost:5000/api/uploadMedia/${firId}`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${user.token}`
+              },
+              body: mediaFormData
+            });
+
+            if (mediaResponse.ok) {
+              const mediaResult = await mediaResponse.json();
+              console.log('Media upload result:', mediaResult);
+              alert(`✅ Media files uploaded successfully!\n${mediaResult.uploadedFiles.length} file(s) saved to Pinata`);
+            } else {
+              console.error('Media upload failed:', await mediaResponse.text());
+              alert('⚠️ FIR submitted but media upload had issues. Files may be incomplete.');
+            }
+          } catch (mediaError) {
+            console.error('Media upload error:', mediaError);
+            alert('⚠️ FIR submitted but media upload failed: ' + mediaError.message);
+          }
         }
 
-        // Reset form after success:
+        // Reset form after success
         setFormData({
           fullName: '',
           fatherName: '',
@@ -337,9 +363,8 @@ const FileFIR = () => {
         setCurrentStep(1);
 
         setTimeout(() => {
-          navigate('/citizen-dashboard')
-        }, 1000);
-
+          navigate('/citizen-dashboard');
+        }, 2000);
       } else {
         alert('❌ FIR submission failed: ' + (result.message || 'Unknown error.'));
       }
