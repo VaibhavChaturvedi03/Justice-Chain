@@ -93,7 +93,7 @@ const Footer = () => {
                 { name: "Download Forms", href: "/resources" },
                 { name: "Legal Resources", href: "/resources" },
                 { name: "Help & Support", href: "/contact" },
-                { name: "FAQ", href: "/resources" },
+                { name: "FAQ", href: "/faq" },
               ].map((link) => (
                 <li key={link.name}>
                   <a
@@ -129,8 +129,8 @@ const Footer = () => {
                 { name: "MyGov Portal", href: "https://mygov.in" },
                 { name: "National Portal", href: "https://india.gov.in" },
                 { name: "RTI Online", href: "https://rtionline.gov.in" },
-                { name: "Citizen Charter", href: "#" },
-                { name: "Public Grievances", href: "#" },
+                { name: "Citizen Charter", href: "https://delhi.gov.in/citizen-charter" },
+                { name: "Public Grievances", href: "https://pgportal.gov.in/" },
               ].map((link) => (
                 <li key={link.name}>
                   <a
