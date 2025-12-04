@@ -12,25 +12,42 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState({});
   const [selectedFIR, setSelectedFIR] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check authentication
-    const authUser = AuthService.isAuthenticated('admin');
-    if (!authUser) {
-      navigate('/admin-login');
-      return;
-    }
-    setUser(authUser);
+    const loadAdminData = async () => {
+      try {
+        // Check authentication
+        const authUser = AuthService.isAuthenticated('admin');
+        if (!authUser) {
+          navigate('/admin-login');
+          return;
+        }
+        setUser(authUser);
 
-    // Load all FIRs
-    const firs = FIRStorage.getAllFIRs();
-    setAllFIRs(firs);
-    setFilteredFIRs(firs);
+        // Load all FIRs from backend using token
+        if (authUser.token) {
+          const result = await FIRStorage.getAllFIRs(authUser.token);
+          const firs = result.firs || [];
+          setAllFIRs(firs);
+          setFilteredFIRs(firs);
 
-    // Calculate statistics
-    const statistics = FIRStorage.getStatistics();
-    setStats(statistics);
+          // Calculate statistics
+          const statistics = await FIRStorage.getStatistics(authUser.token);
+          setStats(statistics || {});
+        }
+      } catch (error) {
+        console.error('Error loading admin data:', error);
+        setAllFIRs([]);
+        setFilteredFIRs([]);
+        setStats({});
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAdminData();
   }, [navigate]);
 
   useEffect(() => {
@@ -88,21 +105,37 @@ const AdminDashboard = () => {
     }
   };
 
-  const updateFIRStatus = (firNumber, newStatus) => {
-    const result = FIRStorage.updateFIRStatus(
-      firNumber, 
-      newStatus, 
-      `Status updated by admin officer`,
-      'Admin Officer'
-    );
-    
-    if (result.success) {
-      // Refresh the FIRs list
-      const updatedFIRs = FIRStorage.getAllFIRs();
-      setAllFIRs(updatedFIRs);
-      alert('FIR status updated successfully!');
-    } else {
-      alert('Failed to update FIR status');
+  const updateFIRStatus = async (firId, newStatus) => {
+    try {
+      if (!user || !user.token) {
+        alert('Authentication required');
+        return;
+      }
+
+      
+      const result = await FIRStorage.updateFIRStatus(
+        firId,
+        newStatus,
+        `Status updated to ${newStatus} by admin`,
+        user.email || 'Admin Officer'
+      , user.token);
+
+      if (result.success) {
+        // Refresh the FIRs list from backend
+        const updatedResult = await FIRStorage.getAllFIRs(user.token);
+        setAllFIRs(updatedResult.firs || []);
+        
+        // Recalculate statistics
+        const statistics = await FIRStorage.getStatistics(user.token);
+        setStats(statistics || {});
+        
+        alert('FIR status updated successfully!');
+      } else {
+        alert('Failed to update FIR status: ' + (result.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error updating FIR status:', error);
+      alert('Error updating FIR status');
     }
   };
 
@@ -280,7 +313,7 @@ const AdminDashboard = () => {
               <select
                 value={fir.status}
                 onChange={(e) => {
-                  updateFIRStatus(fir.firNumber, e.target.value);
+                  updateFIRStatus(fir._id, e.target.value);
                   onClose();
                 }}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -298,7 +331,19 @@ const AdminDashboard = () => {
   };
 
   if (!user) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return <div className="min-h-screen flex items-center justify-center">
+      {loading ? (
+        <div className="text-center">
+          <svg className="animate-spin h-8 w-8 text-blue-600 mx-auto mb-4" fill="none" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25"></circle>
+            <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"></path>
+          </svg>
+          <p>Loading...</p>
+        </div>
+      ) : (
+        <p>Redirecting...</p>
+      )}
+    </div>;
   }
 
   return (
@@ -502,7 +547,7 @@ const AdminDashboard = () => {
                           </button>
                           <select
                             value={fir.status}
-                            onChange={(e) => updateFIRStatus(fir.firNumber, e.target.value)}
+                            onChange={(e) => updateFIRStatus(fir._id, e.target.value)}
                             className="text-xs border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                           >
                             <option value="FIR Registered">FIR Registered</option>

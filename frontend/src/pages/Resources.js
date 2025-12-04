@@ -6,7 +6,7 @@ import { useLocation } from "react-router-dom";
 const Resources = () => {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState(
-    location.state?.openTab || "forms"
+    location.state?.openTab || "guides"
   );
   const downloadForms = [
     {
@@ -170,11 +170,11 @@ const Resources = () => {
   ];
 
   const tabs = [
-    {
-      id: "forms",
-      label: "Download Forms",
-      icon: "M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
-    },
+    // {
+    //   id: "forms",
+    //   label: "Download Forms",
+    //   icon: "M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
+    // },
     {
       id: "guides",
       label: "Legal Guides",
@@ -246,7 +246,7 @@ const Resources = () => {
 
           <div className="p-8">
             {/* Forms Tab */}
-            {activeTab === "forms" && (
+            {/* {activeTab === "forms" && (
               <div className="tab-content">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">
                   Downloadable Forms
@@ -299,7 +299,7 @@ const Resources = () => {
                   ))}
                 </div>
               </div>
-            )}
+            )} */}
 
             {/* Guides Tab */}
             {activeTab === "guides" && (
