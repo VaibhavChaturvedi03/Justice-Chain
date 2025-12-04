@@ -197,6 +197,62 @@ router.post('/uploadFIR', verifyToken, isCitizen, async (req, res) => {
     }
 });
 
+// Public search endpoint - no authentication required
+router.post('/publicSearch', async (req, res) => {
+    try {
+        const { searchType, searchValue } = req.body;
+
+        if (!searchType || !searchValue) {
+            return res.status(400).json({ success: false, error: 'Search type and value required' });
+        }
+
+        let query = {};
+
+        switch (searchType.toLowerCase()) {
+            case 'fir':
+                query = { firNumber: searchValue };
+                break;
+            case 'phone':
+                query = { phone: searchValue };
+                break;
+            case 'email':
+                query = { email: new RegExp(searchValue, 'i') };
+                break;
+            case 'id':
+                query = { idNumber: searchValue };
+                break;
+            case 'name':
+                query = { fullName: new RegExp(searchValue, 'i') };
+                break;
+            case 'incident':
+                query = { incidentType: searchValue };
+                break;
+            case 'status':
+                query = { status: searchValue };
+                break;
+            case 'location':
+                query = { incidentLocation: new RegExp(searchValue, 'i') };
+                break;
+            default:
+                return res.status(400).json({ success: false, error: 'Invalid search type' });
+        }
+
+        // Exclude personal data from public search results
+        const results = await FIR.find(query)
+            .select('-mediaFilesIPFS -email -phone -address -city -state -pincode -fatherName -age -gender -occupation -idType -idNumber -suspectDetails -witnessDetails -evidenceDescription -previousComplaint -previousComplaintDetails')
+            .lean();
+
+        return res.json({
+            success: true,
+            count: results.length,
+            results: results
+        });
+    } catch (err) {
+        console.error('Error searching FIR:', err);
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 router.post('/searchFIR', verifyToken, async (req, res) => {
     try {
         const { searchType, searchValue } = req.body;
@@ -272,6 +328,34 @@ router.get('/getUserFIRs', verifyToken, isCitizen, async (req, res) => {
         return res.json({ success: true, count: firs.length, firs });
     } catch (err) {
         console.error('Error fetching user FIRs:', err);
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Public endpoint for CurrentCases page - no authentication required
+router.get('/publicFIRs', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
+        const total = await FIR.countDocuments();
+        const firs = await FIR.find()
+            .select('-mediaFilesIPFS -email -phone -address -city -state -pincode -fatherName -age -gender -occupation -idType -idNumber -suspectDetails -witnessDetails -evidenceDescription -previousComplaint -previousComplaintDetails')  
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+
+        return res.json({
+            success: true,
+            total,
+            page,
+            limit,
+            pages: Math.ceil(total / limit),
+            firs
+        });
+    } catch (err) {
+        console.error('Error fetching public FIRs:', err);
         return res.status(500).json({ success: false, error: err.message });
     }
 });

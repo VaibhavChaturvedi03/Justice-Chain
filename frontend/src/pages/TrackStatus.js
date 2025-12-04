@@ -40,10 +40,8 @@ const TrackStatus = () => {
     setHasSearched(false);
     
     try {
-      // Get token from user context
-      const token = user?.token || localStorage.getItem('token');
-      
-      const result = await FIRStorage.searchFIR(searchType, searchValue.trim(), token);
+      // Public search - no authentication required
+      const result = await FIRStorage.searchFIR(searchType, searchValue.trim());
       setSearchResult(result);
       setHasSearched(true);
     } catch (error) {

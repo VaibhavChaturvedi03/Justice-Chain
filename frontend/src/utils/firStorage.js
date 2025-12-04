@@ -1,14 +1,13 @@
 const API_BASE_URL = 'http://localhost:5000/api';
 
 export class FIRStorage {
-  // Search FIR by various criteria
-  static async searchFIR(searchType, searchValue, token) {
+  // Search FIR by various criteria (public - no auth required)
+  static async searchFIR(searchType, searchValue) {
     try {
-      const response = await fetch(`${API_BASE_URL}/searchFIR`, {
+      const response = await fetch(`${API_BASE_URL}/publicSearch`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           searchType: searchType,

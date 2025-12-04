@@ -90,7 +90,6 @@ const Footer = () => {
               {[
                 { name: "File New FIR", href: "/file-fir" },
                 { name: "Track FIR Status", href: "/status" },
-                { name: "Download Forms", href: "/resources" },
                 { name: "Legal Resources", href: "/resources" },
                 { name: "Help & Support", href: "/contact" },
                 { name: "FAQ", href: "/faq" },
