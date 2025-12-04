@@ -82,67 +82,58 @@ const Homepage = () => {
   return (
     <div className="min-h-screen bg-gray-50 animate-page-enter">
       {/* SECTION 1: Hero & Main Actions */}
-      <div className="bg-white  relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
-          <div className="text-center mb-12 hero-float">
-            <h1 className="text-4xl font-bold text-blue-900 mb-4">
-              Online First Information Report (FIR) System
+       <div className="bg-gradient-to-b from-gray-50 to-white relative overflow-hidden min-h-screen flex items-center">
+        {/* Decorative Background Elements */}
+        <div className="absolute top-20 left-20 w-32 h-32 bg-blue-100 rounded-3xl opacity-50"></div>
+        <div className="absolute top-40 right-32 w-24 h-24 bg-blue-50 rounded-3xl opacity-50"></div>
+        <div className="absolute bottom-40 left-40 w-20 h-20 bg-gray-200 rounded-2xl opacity-50"></div>
+        <div className="absolute bottom-20 right-20 w-28 h-28 bg-gray-100 rounded-3xl opacity-50"></div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative z-10 w-full">
+          <div className="text-center mb-16 hero-float">
+            {/* Badge */}
+            {/* <div className="inline-flex items-center bg-white border border-blue-200 rounded-full px-6 py-2 mb-8 shadow-sm">
+              <div className="w-2 h-2 bg-blue-600 rounded-full mr-3"></div>
+              <span className="text-blue-600 font-semibold text-sm">Blockchain-Powered Security</span>
+            </div> */}
+            
+            {/* Main Heading */}
+            <h1 className="text-6xl font-bold mb-6">
+              <div className="text-gray-900">JusticeChain</div>
+              <div className="text-blue-600">Tamper-Proof FIR</div>
+              <div className="text-gray-900">Management System</div>
             </h1>
-            <p className="text-lg text-gray-700 max-w-4xl mx-auto leading-relaxed">
-              A secure and transparent platform for filing FIRs online. Submit
-              your complaint 24x7 and track its progress in real-time through
-              the official government portal.
+            
+            {/* Description */}
+            <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed mb-12">
+              A secure and transparent platform for filing FIRs online. Submit your complaint 24x7 
+              and track its progress in real-time through blockchain-secured records.
             </p>
           </div>
-
+          
           {/* Main Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16 stagger-enhanced-1">
-            <Link
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-20 stagger-enhanced-1">
+            <Link 
               to="/file-fir"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-6 rounded-lg font-bold text-xl shadow-lg btn-enhanced hover-lift focus-indicator flex items-center glow-on-hover"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-5 rounded-2xl font-bold text-lg shadow-lg btn-enhanced hover-lift focus-indicator flex items-center transition-all duration-300"
               onClick={playClickSound}
             >
-              <div className="service-icon mr-3">
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                  />
-                </svg>
-              </div>
+              <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
               File New FIR
             </Link>
-            <Link
+            <Link 
               to="/status"
-              className="bg-orange-500 hover:bg-orange-600 text-white px-12 py-6 rounded-lg font-bold text-xl shadow-lg btn-enhanced hover-lift focus-indicator flex items-center glow-on-hover"
+              className="bg-orange-500 hover:bg-orange-600 text-white px-10 py-5 rounded-2xl font-bold text-lg shadow-lg btn-enhanced hover-lift focus-indicator flex items-center transition-all duration-300"
               onClick={playClickSound}
             >
-              <div className="service-icon mr-3">
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-              </div>
+              <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
               Track FIR Status
             </Link>
           </div>
-
           {/* Statistics Bar */}
           <div className="bg-white rounded-2xl p-8 shadow-md border border-[#0a50c2]/10">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -174,82 +165,105 @@ const Homepage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* SECTION 2: Main Services (Left - 2/3 width) */}
           <div className="lg:col-span-3">
-            <div className="bg-white rounded-xl shadow-lg p-8 mb-8 animate-slide-in-left">
-              <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center border-b-2 border-blue-900 pb-4">
-                Online Services
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* File FIR Service */}
-                <Link to="/file-fir" className="group" onClick={playClickSound}>
-                  <div className="service-card-enhanced bg-green-50 border-2 border-green-200 rounded-xl p-8">
-                    <div className="flex items-center mb-4">
-                      <div className="service-icon text-4xl mr-4">📋</div>
-                      <h3 className="text-xl font-bold text-gray-900">
-                        File FIR Online
-                      </h3>
-                    </div>
-                    <p className="text-gray-700 leading-relaxed">
-                      Submit First Information Report for non-serious crimes.
-                      Complete the process in minutes with proper documentation
-                      and verification.
-                    </p>
-                  </div>
-                </Link>
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden mb-8 animate-slide-in-left">
+              {/* Header Section */}
+              <div className="text-center py-12 px-8 bg-gradient-to-br from-gray-50 to-white">
+                <div className="inline-block bg-blue-100 text-blue-600 px-6 py-2 rounded-full text-sm font-semibold mb-4">
+                  Online Services
+                </div>
+                <h2 className="text-4xl font-bold text-gray-900 mb-3">
+                  Quick <span className="text-blue-600">Access Portal</span>
+                </h2>
+                <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+                  Access all government services from one place
+                </p>
+              </div>
 
-                {/* Track Status Service */}
-                <Link to="/status" className="group" onClick={playClickSound}>
-                  <div className="service-card-enhanced bg-blue-50 border-2 border-blue-200 rounded-xl p-8">
-                    <div className="flex items-center mb-4">
-                      <div className="service-icon text-4xl mr-4">🔍</div>
-                      <h3 className="text-xl font-bold text-gray-900">
-                        Track FIR Status
-                      </h3>
+              {/* Services Grid */}
+              <div className="p-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  
+                  {/* File FIR Service */}
+                  <Link to="/file-fir" className="group" onClick={playClickSound}>
+                    <div className="bg-white border-2 border-gray-200 hover:border-blue-500 rounded-xl p-8 transition-all duration-300 hover:shadow-2xl hover:scale-105 h-full flex flex-col">
+                      <div className="flex items-start mb-4">
+                        <div className="bg-gray-100 rounded-lg p-3 mr-4 flex-shrink-0">
+                          <svg className="w-8 h-8 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-xl font-bold text-gray-900 mb-2">File FIR Online</h3>
+                        </div>
+                      </div>
+                      <p className="text-gray-600 leading-relaxed flex-grow">
+                        Submit First Information Report. Complete the process in minutes with proper documentation.
+                      </p>
                     </div>
-                    <p className="text-gray-700 leading-relaxed">
-                      Check the current status of your filed FIR. Get real-time
-                      updates on investigation progress and case developments.
-                    </p>
-                  </div>
-                </Link>
+                  </Link>
 
-                {/* Download Forms Service */}
-                <Link
-                  to="/resources"
-                  className="group"
-                  onClick={playClickSound}
-                >
-                  <div className="service-card-enhanced bg-yellow-50 border-2 border-yellow-200 rounded-xl p-8">
-                    <div className="flex items-center mb-4">
-                      <div className="service-icon text-4xl mr-4">📄</div>
-                      <h3 className="text-xl font-bold text-gray-900">
-                        Download Forms
-                      </h3>
+                  {/* Track Status Service - Featured */}
+                  <Link to="/status" className="group" onClick={playClickSound}>
+                    <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-8 transition-all duration-300 hover:shadow-2xl hover:scale-105 text-white h-full flex flex-col">
+                      <div className="flex items-start mb-4">
+                        <div className="bg-white/20 rounded-lg p-3 mr-4 flex-shrink-0">
+                          <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-xl font-bold mb-2">Track FIR Status</h3>
+                        </div>
+                      </div>
+                      <p className="text-blue-50 leading-relaxed flex-grow">
+                        Check real-time updates on investigation progress and case developments with our tracking system.
+                      </p>
                     </div>
-                    <p className="text-gray-700 leading-relaxed">
-                      Access official police forms, legal documents, and
-                      resources. Download forms for offline submission and
-                      reference.
-                    </p>
-                  </div>
-                </Link>
+                  </Link>
 
-                {/* Contact Police Service */}
-                <Link to="/contact" className="group" onClick={playClickSound}>
-                  <div className="service-card-enhanced bg-red-50 border-2 border-red-200 rounded-xl p-8">
-                    <div className="flex items-center mb-4">
-                      <div className="service-icon text-4xl mr-4">🚔</div>
-                      <h3 className="text-xl font-bold text-gray-900">
-                        Contact Police
-                      </h3>
+                  {/* Download Forms Service */}
+                  <Link to="/resources" className="group" onClick={playClickSound}>
+                    <div className="bg-white border-2 border-gray-200 hover:border-blue-500 rounded-xl p-8 transition-all duration-300 hover:shadow-2xl hover:scale-105 h-full flex flex-col">
+                      <div className="flex items-start mb-4">
+                        <div className="bg-gray-100 rounded-lg p-3 mr-4 flex-shrink-0">
+                          <svg className="w-8 h-8 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-xl font-bold text-gray-900 mb-2">Download Forms</h3>
+                        </div>
+                      </div>
+                      <p className="text-gray-600 leading-relaxed flex-grow">
+                        Access official police forms and legal documents for offline submission and reference materials.
+                      </p>
                     </div>
-                    <p className="text-gray-700 leading-relaxed">
-                      Find nearest police station, contact details, and officer
-                      information. Get direct assistance and support.
-                    </p>
-                  </div>
-                </Link>
+                  </Link>
+
+                  {/* Contact Police Service */}
+                  <Link to="/contact" className="group" onClick={playClickSound}>
+                    <div className="bg-white border-2 border-gray-200 hover:border-blue-500 rounded-xl p-8 transition-all duration-300 hover:shadow-2xl hover:scale-105 h-full flex flex-col">
+                      <div className="flex items-start mb-4">
+                        <div className="bg-gray-100 rounded-lg p-3 mr-4 flex-shrink-0">
+                          <svg className="w-8 h-8 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-xl font-bold text-gray-900 mb-2">Contact Police</h3>
+                        </div>
+                      </div>
+                      <p className="text-gray-600 leading-relaxed flex-grow">
+                        Find nearest police station, contact details and officer information.Get direct assistance and support.
+                      </p>
+                    </div>
+                  </Link>
+                </div>
               </div>
             </div>
+
+            {/* Important Notice */}
+            
           </div>
 
           {/* SECTION 3: Sidebar (Right - 1/3 width) */}
