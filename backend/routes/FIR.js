@@ -524,7 +524,7 @@ router.post('/uploadMedia/:firId', verifyToken, async (req, res) => {
             } else {
                 failedFiles.push({
                     fileName: file.originalname,
-                    error: pinataResult.error
+                    error: pinataResult.error || 'Unknown error'
                 });
                 console.error(`✗ Failed to upload ${file.originalname}: ${pinataResult.error}`);
             }

@@ -1,6 +1,9 @@
-const pinataSDK = require('pinata');
+const axios = require('axios');
+const FormData = require('form-data');
 
-const initPinataClient = () => {
+const PINATA_API_URL = 'https://api.pinata.cloud';
+
+const getPinataHeaders = () => {
   const pinataApiKey = process.env.PINATA_API_KEY;
   const pinataSecretApiKey = process.env.PINATA_SECRET_API_KEY;
 
@@ -8,47 +11,44 @@ const initPinataClient = () => {
     throw new Error('Pinata API keys not configured. Please set PINATA_API_KEY and PINATA_SECRET_API_KEY in .env file');
   }
 
-  return new pinataSDK(pinataApiKey, pinataSecretApiKey);
+  return {
+    'pinata_api_key': pinataApiKey,
+    'pinata_secret_api_key': pinataSecretApiKey
+  };
 };
 
 const uploadFileToPinata = async (fileBuffer, fileName, mediaType = 'document') => {
   try {
-    const pinata = initPinataClient();
-    const fs = require('fs');
-    const path = require('path');
-    const os = require('os');
+    const form = new FormData();
+    form.append('file', fileBuffer, fileName);
 
-    // Create temporary file
-    const tempDir = os.tmpdir();
-    const tempFilePath = path.join(tempDir, `temp_${Date.now()}_${fileName}`);
-    
-    // Write buffer to temporary file
-    fs.writeFileSync(tempFilePath, fileBuffer);
-
-    // Read file stream for upload
-    const fileStream = fs.createReadStream(tempFilePath);
-
-    const options = {
-      pinataMetadata: {
-        name: fileName,
-        keyvalues: {
-          uploadedFrom: 'JusticeChain',
-          mediaType: mediaType, 
-          timestamp: new Date().toISOString(),
-        }
+    const metadata = {
+      name: fileName,
+      keyvalues: {
+        uploadedFrom: 'JusticeChain',
+        mediaType: mediaType,
+        timestamp: new Date().toISOString(),
       }
     };
 
-    const result = await pinata.pinFileToIPFS(fileStream, options);
-    
-    // Clean up temporary file
-    fs.unlinkSync(tempFilePath);
-    
-    const pinataUrl = `https://gateway.pinata.cloud/ipfs/${result.IpfsHash}`;
-    
+    form.append('pinataMetadata', JSON.stringify(metadata));
+
+    const headers = getPinataHeaders();
+
+    const response = await axios.post(`${PINATA_API_URL}/pinning/pinFileToIPFS`, form, {
+      headers: {
+        ...headers,
+        ...form.getHeaders()
+      },
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
+    });
+
+    const pinataUrl = `https://gateway.pinata.cloud/ipfs/${response.data.IpfsHash}`;
+
     return {
       success: true,
-      ipfsHash: result.IpfsHash,
+      ipfsHash: response.data.IpfsHash,
       fileName: fileName,
       size: fileBuffer.length,
       timestamp: new Date().toISOString(),
@@ -56,58 +56,68 @@ const uploadFileToPinata = async (fileBuffer, fileName, mediaType = 'document') 
       mediaType: mediaType
     };
   } catch (error) {
-    console.error('Pinata upload error:', error);
+    console.error('Pinata upload error:', error.response?.data || error.message);
     return {
       success: false,
-      error: error.message
+      error: error.response?.data?.error || error.message
     };
   }
 };
 
 const uploadJSONToPinata = async (jsonData, fileName) => {
   try {
-    const pinata = initPinataClient();
-
-    const options = {
-      pinataMetadata: {
-        name: fileName,
-        keyvalues: {
-          uploadedFrom: 'JusticeChain',
-          dataType: 'FIR',
-          timestamp: new Date().toISOString(),
-        }
+    const metadata = {
+      name: fileName,
+      keyvalues: {
+        uploadedFrom: 'JusticeChain',
+        dataType: 'FIR',
+        timestamp: new Date().toISOString(),
       }
     };
 
-    const result = await pinata.pinJSONToIPFS(jsonData, options);
-    
+    const headers = getPinataHeaders();
+
+    const response = await axios.post(`${PINATA_API_URL}/pinning/pinJSONToIPFS`, 
+      {
+        pinataContent: jsonData,
+        pinataMetadata: metadata
+      },
+      {
+        headers
+      }
+    );
+
     return {
       success: true,
-      ipfsHash: result.IpfsHash,
+      ipfsHash: response.data.IpfsHash,
       fileName: fileName,
       timestamp: new Date().toISOString()
     };
   } catch (error) {
-    console.error('Pinata JSON upload error:', error);
+    console.error('Pinata JSON upload error:', error.response?.data || error.message);
     return {
       success: false,
-      error: error.message
+      error: error.response?.data?.error || error.message
     };
   }
 };
 
 const getFileFromPinata = async (ipfsHash) => {
   try {
-    const pinata = initPinataClient();
     const url = `https://gateway.pinata.cloud/ipfs/${ipfsHash}`;
     
+    const response = await axios.get(url, {
+      responseType: 'arraybuffer'
+    });
+
     return {
       success: true,
       url: url,
-      ipfsHash: ipfsHash
+      data: response.data,
+      contentType: response.headers['content-type']
     };
   } catch (error) {
-    console.error('Pinata retrieval error:', error);
+    console.error('Pinata fetch error:', error.message);
     return {
       success: false,
       error: error.message
@@ -117,8 +127,11 @@ const getFileFromPinata = async (ipfsHash) => {
 
 const unpinFromPinata = async (ipfsHash) => {
   try {
-    const pinata = initPinataClient();
-    await pinata.unpin(ipfsHash);
+    const headers = getPinataHeaders();
+    
+    await axios.delete(`${PINATA_API_URL}/pinning/unpin/${ipfsHash}`, {
+      headers
+    });
     
     return {
       success: true,
@@ -126,7 +139,7 @@ const unpinFromPinata = async (ipfsHash) => {
       ipfsHash: ipfsHash
     };
   } catch (error) {
-    console.error('Pinata unpin error:', error);
+    console.error('Pinata unpin error:', error.message);
     return {
       success: false,
       error: error.message
@@ -136,26 +149,22 @@ const unpinFromPinata = async (ipfsHash) => {
 
 const listPinnedFiles = async (filters = {}) => {
   try {
-    const pinata = initPinataClient();
+    const headers = getPinataHeaders();
     
-    const options = {
-      pageLimit: filters.pageLimit || 10,
-      pageOffset: filters.pageOffset || 0
-    };
-
-    if (filters.metadata) {
-      options.metadata = filters.metadata;
-    }
-
-    const result = await pinata.pinList(options);
+    let queryParams = `pageLimit=${filters.pageLimit || 10}&pageOffset=${filters.pageOffset || 0}`;
+    
+    const response = await axios.get(
+      `${PINATA_API_URL}/data/pinList?${queryParams}`,
+      { headers }
+    );
     
     return {
       success: true,
-      files: result.rows,
-      count: result.count
+      files: response.data.rows,
+      count: response.data.count
     };
   } catch (error) {
-    console.error('Pinata list error:', error);
+    console.error('Pinata list error:', error.message);
     return {
       success: false,
       error: error.message
@@ -164,31 +173,40 @@ const listPinnedFiles = async (filters = {}) => {
 };
 
 const uploadMultipleFilesToPinata = async (fileArray) => {
-  try {
-    const results = [];
+  const uploadedFiles = [];
+  const failedFiles = [];
+  
+  for (const file of fileArray) {
+    const result = await uploadFileToPinata(file.buffer, file.originalname, file.mimetype);
     
-    for (const file of fileArray) {
-      const result = await uploadFileToPinata(file.buffer, file.originalName, file.mediaType);
-      results.push(result);
+    if (result.success) {
+      uploadedFiles.push({
+        fileName: file.originalname,
+        ipfsHash: result.ipfsHash,
+        url: result.pinataUrl,
+        size: result.size
+      });
+    } else {
+      failedFiles.push({
+        fileName: file.originalname,
+        error: result.error
+      });
     }
-    
-    return {
-      success: true,
-      files: results,
-      totalSuccessful: results.filter(r => r.success).length,
-      totalFailed: results.filter(r => !r.success).length
-    };
-  } catch (error) {
-    console.error('Batch upload error:', error);
-    return {
-      success: false,
-      error: error.message
-    };
   }
+  
+  const totalUploaded = uploadedFiles.length;
+  const totalFailed = failedFiles.length;
+
+  return {
+    success: totalFailed === 0,
+    uploadedFiles,
+    failedFiles,
+    message: `${totalUploaded} file(s) uploaded successfully`,
+    warning: totalFailed > 0 ? `${totalFailed} file(s) failed to upload` : ''
+  };
 };
 
 module.exports = {
-  initPinataClient,
   uploadFileToPinata,
   uploadJSONToPinata,
   uploadMultipleFilesToPinata,

@@ -48,7 +48,7 @@ router.post('/citizen/login', async (req, res) => {
 
         // ---- ADD JWT HERE ----
         const token = jwt.sign(
-            { id: user._id, role: "citizen" },
+            { id: user._id, email: user.email, role: "citizen" },
             process.env.JWT_SECRET,
             { expiresIn: "10h" }
         );
@@ -111,7 +111,7 @@ router.post('/admin/login', async (req, res) => {
 
         // ---- ADD JWT HERE ----
         const token = jwt.sign(
-            { id: admin._id, role: "admin" },
+            { id: admin._id, email: admin.email, role: "admin" },
             process.env.JWT_SECRET,
             { expiresIn: "7d" }
         );

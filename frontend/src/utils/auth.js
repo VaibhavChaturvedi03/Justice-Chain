@@ -21,6 +21,22 @@ export class AuthService {
     }
   }
 
+  // Helper function to check if token has email field (for backward compatibility)
+  static isTokenValid(token) {
+    try {
+      if (!token) return false;
+      
+      const parts = token.split('.');
+      if (parts.length !== 3) return false;
+      
+      const payload = JSON.parse(atob(parts[1]));
+      // Token must have email field
+      return !!payload.email;
+    } catch (err) {
+      return false;
+    }
+  }
+
   // ---------- CITIZEN SIGNUP ----------
   static async signupCitizen(userData) {
     try {
@@ -140,6 +156,13 @@ export class AuthService {
     // Check if token is expired
     if (authData.token && this.isTokenExpired(authData.token)) {
       console.log('Token expired, clearing storage');
+      localStorage.removeItem(key);
+      return null;
+    }
+    
+    // Check if token has required fields (backward compatibility with old tokens)
+    if (authData.token && !this.isTokenValid(authData.token)) {
+      console.log('Old token format detected, clearing storage - please log in again');
       localStorage.removeItem(key);
       return null;
     }

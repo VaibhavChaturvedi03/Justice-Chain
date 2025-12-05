@@ -22,7 +22,8 @@ const CitizenDashboard = () => {
 
         if (authUser.token) {
           const result = await FIRStorage.getUserFIRs(authUser.token);
-          const myFIRs = result.firs || [];
+          const myFIRs = Array.isArray(result) ? result : [];
+          console.log("all FIR" , myFIRs);
           setUserFIRs(myFIRs);
 
           const stats = {
@@ -248,11 +249,11 @@ const CitizenDashboard = () => {
                       <p className="text-xs text-gray-500">Last Updated: {fir.lastUpdated}</p>
                     </div>
                     <div className="ml-4 flex items-center space-x-2">
-                      {fir.serverId ? (
+                      {fir._id ? (
                         <button
                           onClick={async () => {
                             try {
-                              const resp = await fetch(`http://localhost:5000/api/downloadFIR/${fir.serverId}`, {
+                              const resp = await fetch(`http://localhost:5000/api/downloadFIR/${fir._id}`, {
                                 headers: {
                                   'Authorization': `Bearer ${user.token}`
                                 }
