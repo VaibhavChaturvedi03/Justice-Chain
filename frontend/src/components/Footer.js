@@ -1,6 +1,9 @@
 import React from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 const Footer = () => {
+  const navigate = useNavigate();
+
   return (
     <footer className="bg-gray-900 text-white mt-auto">
       {/* Main Footer Content */}
@@ -86,34 +89,84 @@ const Footer = () => {
             <h3 className="text-lg font-semibold mb-4 text-white">
               Quick Access
             </h3>
+
             <ul className="space-y-3">
               {[
                 { name: "File New FIR", href: "/file-fir" },
                 { name: "Track FIR Status", href: "/status" },
+                {
+                  name: "Find Police Station",
+                  href: "https://www.passportindia.gov.in/psp/Police",
+                  external: true,
+                },
                 { name: "Legal Resources", href: "/resources" },
                 { name: "Help & Support", href: "/contact" },
-                { name: "FAQ", href: "/faq" },
               ].map((link) => (
                 <li key={link.name}>
-                  <a
-                    href={link.href}
-                    className="text-gray-300 hover:text-white transition-colors duration-200 flex items-center group"
-                  >
-                    <svg
-                      className="h-3 w-3 mr-2 opacity-50 group-hover:opacity-100 transition-opacity"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
+                  {link.external ? (
+                    <a
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-300 hover:text-white transition-colors duration-200 flex items-center group"
                     >
-                      <path
-                        fillRule="evenodd"
-                        d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    {link.name}
-                  </a>
+                      <svg
+                        className="h-3 w-3 mr-2 opacity-50 group-hover:opacity-100 transition-opacity"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      {link.name}
+                    </a>
+                  ) : (
+                    <Link
+                      to={link.href}
+                      className="text-gray-300 hover:text-white transition-colors duration-200 flex items-center group"
+                    >
+                      <svg
+                        className="h-3 w-3 mr-2 opacity-50 group-hover:opacity-100 transition-opacity"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      {link.name}
+                    </Link>
+                  )}
                 </li>
               ))}
+
+              {/* Custom FAQ Button using navigate() */}
+              <li>
+                <button
+                  onClick={() =>
+                    navigate("/resources", { state: { openTab: "faq" } })
+                  }
+                  className="text-gray-300 hover:text-white transition-colors duration-200 flex items-center group"
+                >
+                  <svg
+                    className="h-3 w-3 mr-2 opacity-50 group-hover:opacity-100 transition-opacity"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  FAQ
+                </button>
+              </li>
             </ul>
           </div>
 
@@ -128,7 +181,10 @@ const Footer = () => {
                 { name: "MyGov Portal", href: "https://mygov.in" },
                 { name: "National Portal", href: "https://india.gov.in" },
                 { name: "RTI Online", href: "https://rtionline.gov.in" },
-                { name: "Citizen Charter", href: "https://delhi.gov.in/citizen-charter" },
+                {
+                  name: "Citizen Charter",
+                  href: "https://delhi.gov.in/citizen-charter",
+                },
                 { name: "Public Grievances", href: "https://pgportal.gov.in/" },
               ].map((link) => (
                 <li key={link.name}>
@@ -165,23 +221,17 @@ const Footer = () => {
                 © 2025 Justice Chain. All rights reserved.
               </p>
               <div className="flex items-center space-x-4 text-sm">
-                <a
-                  href="/privacy"
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
+                <a href="/privacy" className="text-gray-400 hover:text-white">
                   Privacy Policy
                 </a>
                 <span className="text-gray-600">|</span>
-                <a
-                  href="/terms"
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
+                <a href="/terms" className="text-gray-400 hover:text-white">
                   Terms of Service
                 </a>
                 <span className="text-gray-600">|</span>
                 <a
                   href="/accessibility"
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="text-gray-400 hover:text-white"
                 >
                   Accessibility
                 </a>
@@ -205,6 +255,7 @@ const Footer = () => {
                   <span className="text-white font-semibold">100</span>
                 </span>
               </div>
+
               <div className="flex items-center space-x-2">
                 <div className="bg-orange-600 rounded-full p-1">
                   <svg
