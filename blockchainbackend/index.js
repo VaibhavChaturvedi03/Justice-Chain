@@ -9,11 +9,11 @@ const app = express();
 app.use(cors());
 app.use(express.json()); 
 
-const PINATA_API_KEY = 'cc8fe42e71e224398f99';
-const PINATA_SECRET_API_KEY = 'af5c1aec92580ed58c924a2b7fa4c8cb4688c463071e35359510115e4394c210';
-const PRIVATE_KEY = 'a3a711b3ce1f86a929dcc4ed6412ba8b9631edeb261309e97d3fcbfcad35a0f5';
+const PINATA_API_KEY = '43871aeceb6a6714608f';
+const PINATA_SECRET_API_KEY = 'd4f0e5c82eae348ed4c4cd416a13a16b4c5ee7fbeaaecdeefa7d8f8e972280da';
+const PRIVATE_KEY = 'e425cf9d9200b5ed94e7abae0aefdbe805ac43c95c32576d1236ba915a9e3498';
 const RPC_URL = 'https://sepolia.infura.io/v3/542f1eaa832d48f7b99c34caca33add7';
-const CONTRACT_ADDRESS = '0xF23133f1cd75C8AF6dEe73389BbB4C327697B82D';
+const CONTRACT_ADDRESS = '0x012bE34679a1b49b67926e62D54E6073dEd59cB2';
 const PORT = 3000;
 
 const abi = JSON.parse(fs.readFileSync('./JusticeChainABI.json', 'utf8'));
@@ -62,13 +62,16 @@ app.post('/api/uploadFIR', async (req, res) => {
         });
 
         const ipfsHash = pinataResponse.data.IpfsHash;
-        
+
+        // include a JSON string of additional incident details expected by the contract
+        const incidentDetailsJson = JSON.stringify(firData.incidentDetailsJson || firData || {});
 
         const tx = await contract.createFIR(
             firData.incidentType || firData.title || 'Untitled FIR',
             firData.incidentDescription || firData.description || 'No description',
             severity,
-            ipfsHash
+            ipfsHash,
+            incidentDetailsJson
         );
         console.log("Sending to blockchain:", { severity, firData });
 

@@ -130,12 +130,55 @@ const AdminDashboard = () => {
         setStats(statistics || {});
         
         alert('FIR status updated successfully!');
+
+        // If the admin marked the FIR as 'FIR Registered', register it on-chain
+        if (newStatus === 'FIR Registered') {
+          try {
+            const chainResult = await FIRStorage.registerFIROnChain(firId, user.token);
+            if (chainResult && chainResult.success) {
+              const txHash = chainResult.txHash || chainResult.tx_hash || chainResult.transactionHash || '';
+              alert(`FIR registered on blockchain successfully${txHash ? `\nTransaction: ${txHash}` : ''}`);
+            } else {
+              console.warn('Register on chain returned failure:', chainResult);
+              alert('FIR status updated but failed to register on blockchain. Check console for details.');
+            }
+          } catch (chainErr) {
+            console.error('Error registering FIR on chain after status update:', chainErr);
+            alert('FIR status updated but an error occurred while registering on blockchain. See console.');
+          }
+        }
       } else {
         alert('Failed to update FIR status: ' + (result.error || 'Unknown error'));
       }
     } catch (error) {
       console.error('Error updating FIR status:', error);
       alert('Error updating FIR status');
+    }
+  };
+
+  const handleRegisterOnChain = async (fir) => {
+    try {
+      if (!user || !user.token) {
+        alert('Authentication required');
+        return;
+      }
+
+      // Provide immediate feedback
+      const confirmRegister = window.confirm('Register this FIR on the blockchain? This will create an on-chain record.');
+      if (!confirmRegister) return;
+
+      // Call the frontend helper which will fetch FIR data and forward to blockchain backend
+      const result = await FIRStorage.registerFIROnChain(fir._id, user.token);
+
+      if (result && result.success) {
+        const txHash = result.txHash || result.tx_hash || result.transactionHash || '';
+        alert(`FIR registered on chain successfully${txHash ? `\nTransaction: ${txHash}` : ''}`);
+      } else {
+        alert('Failed to register FIR on chain: ' + (result && (result.error || result.message) ? (result.error || result.message) : 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error registering FIR on chain:', error);
+      alert('Error registering FIR on chain: ' + (error.message || error));
     }
   };
 
@@ -539,6 +582,12 @@ const AdminDashboard = () => {
                             className="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
                           >
                             View Details
+                          </button>
+                          <button
+                            onClick={() => handleRegisterOnChain(fir)}
+                            className="text-xs bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700 transition-colors"
+                          >
+                            Register on Chain
                           </button>
                           <select
                             value={fir.status}

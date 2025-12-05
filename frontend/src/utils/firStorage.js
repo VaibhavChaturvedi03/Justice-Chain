@@ -220,6 +220,50 @@ export class FIRStorage {
     }
   }
 
+  // Register FIR on blockchain by calling the blockchain backend
+  static async registerFIROnChain(firId, token) {
+    try {
+      // First fetch the FIR details from main backend
+      const firResponse = await fetch(`${API_BASE_URL}/getFIR/${firId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!firResponse.ok) {
+        throw new Error(`Server error ${firResponse.status}`);
+      }
+
+      const firDataResp = await firResponse.json();
+      if (!firDataResp.success || !firDataResp.fir) {
+        throw new Error('Failed to fetch FIR data');
+      }
+
+      const payload = firDataResp.fir;
+
+      // Send to blockchain backend service (runs on port 3000)
+      const response = await fetch(`http://localhost:3000/api/uploadFIR`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Blockchain service error ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error registering FIR on chain:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
   // Upload media files (photos, videos) to a FIR
   static async uploadMediaToFIR(firId, files, token) {
     try {
