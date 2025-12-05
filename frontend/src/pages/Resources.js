@@ -153,6 +153,14 @@ const Resources = () => {
   ];
 
   const handleDownload = (fileName) => {
+    const safeName = fileName.replace(/ /g, "_") + ".pdf"; 
+
+  const link = document.createElement("a");
+  link.href = `/pdfs/${safeName}`;
+  link.download = safeName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
     showDownloadToast(fileName);
   };
 
@@ -231,8 +239,6 @@ const Resources = () => {
                             <span>{guide.fileType}</span>
                             <span>•</span>
                             <span>{guide.fileSize}</span>
-                            <span>•</span>
-                            <span>{guide.downloads} downloads</span>
                           </div>
                         </div>
                         <button

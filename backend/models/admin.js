@@ -3,6 +3,12 @@ const mongoose = require('mongoose');
 const adminSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
+    fullName: { type: String, required: false },
+    phone: { type: String, required: false },
+    empId: { type: String, required: false },
+    department: { type: String, required: false },
+    designation: { type: String, required: false },
+    officeAddress: { type: String, required: false },
     state: { 
         type: String, 
         enum: [
@@ -14,7 +20,7 @@ const adminSchema = new mongoose.Schema({
         ],
         required: false 
     },
-    fullName: { type: String, required: false },
+    city: { type: String, required: false },
     policeStation: { type: String, required: false },
     badge: { type: String, required: false }
 }, { timestamps: true });

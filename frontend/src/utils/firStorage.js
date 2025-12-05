@@ -35,6 +35,7 @@ export class FIRStorage {
   // Get all FIRs for logged-in user
   static async getUserFIRs(token) {
     try {
+      console.log('getUserFIRs - Token:', token?.substring(0, 20) + '...');
       const response = await fetch(`${API_BASE_URL}/getUserFIRs`, {
         method: 'GET',
         headers: {
@@ -43,11 +44,13 @@ export class FIRStorage {
         }
       });
 
+      console.log('getUserFIRs - Response Status:', response.status);
       if (!response.ok) {
         throw new Error(`Server error ${response.status}`);
       }
 
       const data = await response.json();
+      console.log('getUserFIRs - Response Data:', data);
       return data.success ? data.firs : [];
     } catch (error) {
       console.error('Error fetching user FIRs:', error);

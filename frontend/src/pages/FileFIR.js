@@ -263,6 +263,8 @@ const FileFIR = () => {
     // Create FIR data without mediaFiles (files will be uploaded separately)
     const firDataWithUser = {
       ...formData,
+      email: user.email,  // Ensure email is at the root level
+      phone: user.phone || formData.phone,  // Include phone from user or form
       mediaFiles: [],  // Don't include base64 files in JSON
       severity,
       urgencyLevel,
@@ -302,10 +304,29 @@ const FileFIR = () => {
         if (formData.mediaFiles.length > 0) {
           const mediaFormData = new FormData();
           
-          // Convert base64 files back to Blob objects
+          // Convert base64 data URIs back to Blob objects
           for (const file of formData.mediaFiles) {
-            const blob = await fetch(file.data).then(res => res.blob());
-            mediaFormData.append('files', blob, file.name);
+            try {
+              // Parse base64 data URI: "data:image/png;base64,..."
+              const dataUri = file.data;
+              const parts = dataUri.split(',');
+              const base64 = parts[1];
+              const mimeMatch = parts[0].match(/:(.*?);/);
+              const mimeType = mimeMatch ? mimeMatch[1] : file.type;
+              
+              // Convert base64 to Blob
+              const binaryString = atob(base64);
+              const bytes = new Uint8Array(binaryString.length);
+              for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+              }
+              const blob = new Blob([bytes], { type: mimeType });
+              
+              mediaFormData.append('files', blob, file.name);
+              console.log(`Added file to upload: ${file.name} (${(blob.size / 1024).toFixed(2)} KB)`);
+            } catch (error) {
+              console.error(`Failed to convert file ${file.name}:`, error);
+            }
           }
 
           try {
@@ -330,6 +351,9 @@ const FileFIR = () => {
               const failureCount = mediaResult.failedFiles ? mediaResult.failedFiles.length : 0;
               const failureMsg = failureCount > 0 ? `\n${failureCount} file(s) failed: ${mediaResult.failedFiles.map(f => f.error).join(', ')}` : '';
               alert(`⚠️ Partial upload completed\n${successCount} file(s) uploaded successfully to Pinata${failureMsg}`);
+            } else if (mediaResponse.status === 503) {
+              console.warn('Pinata API keys not configured:', mediaResult);
+              alert(`⚠️ FIR submitted successfully!\n\nMedia upload is currently unavailable:\n${mediaResult.error}\n\nYou can still view and manage your FIR. Media files can be added later when Pinata is configured.`);
             } else {
               console.error('Media upload failed:', mediaResult);
               const errorMsg = mediaResult.error || 'Unknown error';

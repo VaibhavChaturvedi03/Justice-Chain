@@ -370,6 +370,7 @@ router.get('/getAllFIRs', verifyToken, isAdmin, async (req, res) => {
         
         let query = {};
         
+        // Filter FIRs by admin's state
         if (admin && admin.state) {
             query = { state: admin.state };
         }
@@ -524,7 +525,7 @@ router.post('/uploadMedia/:firId', verifyToken, async (req, res) => {
             } else {
                 failedFiles.push({
                     fileName: file.originalname,
-                    error: pinataResult.error
+                    error: pinataResult.error || 'Unknown error'
                 });
                 console.error(`✗ Failed to upload ${file.originalname}: ${pinataResult.error}`);
             }
