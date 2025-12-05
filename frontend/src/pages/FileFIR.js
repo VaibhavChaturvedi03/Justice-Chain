@@ -309,6 +309,7 @@ const FileFIR = () => {
           }
 
           try {
+            console.log(`Uploading ${formData.mediaFiles.length} media file(s) to Pinata...`);
             const mediaResponse = await fetch(`http://localhost:5000/api/uploadMedia/${firId}`, {
               method: 'POST',
               headers: {
@@ -317,19 +318,29 @@ const FileFIR = () => {
               body: mediaFormData
             });
 
-            if (mediaResponse.ok) {
-              const mediaResult = await mediaResponse.json();
-              console.log('Media upload result:', mediaResult);
-              alert(`✅ Media files uploaded successfully!\n${mediaResult.uploadedFiles.length} file(s) saved to Pinata`);
+            const mediaResult = await mediaResponse.json();
+            
+            if (mediaResponse.ok && mediaResult.success) {
+              console.log('✓ Media upload successful:', mediaResult);
+              const successCount = mediaResult.uploadedFiles ? mediaResult.uploadedFiles.length : 0;
+              alert(`✅ Media files uploaded successfully!\n${successCount} file(s) saved to Pinata IPFS`);
+            } else if (mediaResponse.ok && mediaResult.uploadedFiles && mediaResult.uploadedFiles.length > 0) {
+              console.log('⚠️  Partial media upload:', mediaResult);
+              const successCount = mediaResult.uploadedFiles.length;
+              const failureCount = mediaResult.failedFiles ? mediaResult.failedFiles.length : 0;
+              const failureMsg = failureCount > 0 ? `\n${failureCount} file(s) failed: ${mediaResult.failedFiles.map(f => f.error).join(', ')}` : '';
+              alert(`⚠️ Partial upload completed\n${successCount} file(s) uploaded successfully to Pinata${failureMsg}`);
             } else {
-              console.error('Media upload failed:', await mediaResponse.text());
-              alert('⚠️ FIR submitted but media upload had issues. Files may be incomplete.');
+              console.error('Media upload failed:', mediaResult);
+              const errorMsg = mediaResult.error || 'Unknown error';
+              alert(`⚠️ FIR submitted but media upload failed:\n${errorMsg}\n\nPlease check your Pinata API keys in the backend .env file.`);
             }
           } catch (mediaError) {
-            console.error('Media upload error:', mediaError);
-            alert('⚠️ FIR submitted but media upload failed: ' + mediaError.message);
+            console.error('Media upload network error:', mediaError);
+            alert(`⚠️ FIR submitted but media upload failed due to network error:\n${mediaError.message}\n\nPlease ensure the backend server is running on http://localhost:5000`);
           }
         }
+
 
         // Reset form after success
         setFormData({

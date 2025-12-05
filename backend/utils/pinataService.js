@@ -14,9 +14,19 @@ const initPinataClient = () => {
 const uploadFileToPinata = async (fileBuffer, fileName, mediaType = 'document') => {
   try {
     const pinata = initPinataClient();
+    const fs = require('fs');
+    const path = require('path');
+    const os = require('os');
 
-    const stream = require('stream');
-    const readableStream = stream.Readable.from(fileBuffer);
+    // Create temporary file
+    const tempDir = os.tmpdir();
+    const tempFilePath = path.join(tempDir, `temp_${Date.now()}_${fileName}`);
+    
+    // Write buffer to temporary file
+    fs.writeFileSync(tempFilePath, fileBuffer);
+
+    // Read file stream for upload
+    const fileStream = fs.createReadStream(tempFilePath);
 
     const options = {
       pinataMetadata: {
@@ -29,7 +39,10 @@ const uploadFileToPinata = async (fileBuffer, fileName, mediaType = 'document') 
       }
     };
 
-    const result = await pinata.pinFileToIPFS(readableStream, options);
+    const result = await pinata.pinFileToIPFS(fileStream, options);
+    
+    // Clean up temporary file
+    fs.unlinkSync(tempFilePath);
     
     const pinataUrl = `https://gateway.pinata.cloud/ipfs/${result.IpfsHash}`;
     
