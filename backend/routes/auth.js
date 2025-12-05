@@ -73,7 +73,28 @@ router.post('/citizen/login', async (req, res) => {
 // Admin Register
 router.post('/admin/register', async (req, res) => {
     try {
-        const { email, password } = req.body;
+        console.log("Admin register request received:", { 
+            email: req.body.email,
+            hasPassword: !!req.body.password,
+            bodyKeys: Object.keys(req.body)
+        });
+
+        const { 
+            email, 
+            password, 
+            fullName, 
+            phone, 
+            empId, 
+            department, 
+            designation, 
+            officeAddress, 
+            state, 
+            city 
+        } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({ message: 'Email and password are required' });
+        }
 
         const existingAdmin = await Admin.findOne({ email });
         if (existingAdmin) {
@@ -83,14 +104,35 @@ router.post('/admin/register', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
         const newAdmin = new Admin({
             email,
-            password: hashedPassword
+            password: hashedPassword,
+            fullName,
+            phone,
+            empId,
+            department,
+            designation,
+            officeAddress,
+            state,
+            city
         });
+        
+        console.log("Saving new admin:", { email, fullName, empId });
         await newAdmin.save();
+        console.log("Admin saved successfully");
 
         res.json({ message: 'Admin registered successfully' });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Server error' });
+        console.error("ADMIN REGISTER ERROR:", {
+            message: err.message,
+            code: err.code,
+            name: err.name,
+            stack: err.stack
+        });
+
+        if (err.code === 11000) {
+            return res.status(400).json({ message: "Admin with this email already exists" });
+        }
+
+        res.status(500).json({ message: "Server error", error: err.message });
     }
 });
 

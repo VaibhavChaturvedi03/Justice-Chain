@@ -370,6 +370,7 @@ router.get('/getAllFIRs', verifyToken, isAdmin, async (req, res) => {
         
         let query = {};
         
+        // Filter FIRs by admin's state
         if (admin && admin.state) {
             query = { state: admin.state };
         }
