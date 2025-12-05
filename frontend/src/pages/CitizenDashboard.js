@@ -101,12 +101,7 @@ const CitizenDashboard = () => {
                 <p className="text-sm font-medium text-gray-900">{user.email}</p>
                 <p className="text-xs text-gray-500">Citizen Account</p>
               </div>
-              <button
-                onClick={handleLogout}
-                className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
-              >
-                Logout
-              </button>
+              
             </div>
           </div>
         </div>
@@ -296,4 +291,4 @@ const CitizenDashboard = () => {
   );
 };
 
-export default CitizenDashboard;
+export default CitizenDashboard; 
