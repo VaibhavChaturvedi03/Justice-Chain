@@ -492,6 +492,7 @@ router.post('/uploadMedia/:firId', verifyToken, async (req, res) => {
         }
 
         const uploadedFiles = [];
+        const failedFiles = [];
 
         for (const file of files) {
             const extension = file.originalname.split('.').pop().toLowerCase();
@@ -503,6 +504,7 @@ router.post('/uploadMedia/:firId', verifyToken, async (req, res) => {
                 mediaType = 'video';
             }
 
+            console.log(`Uploading ${file.originalname} (${mediaType}) to Pinata...`);
             const pinataResult = await uploadFileToPinata(file.buffer, file.originalname, mediaType);
 
             if (pinataResult.success) {
@@ -518,16 +520,30 @@ router.post('/uploadMedia/:firId', verifyToken, async (req, res) => {
 
                 fir.mediaFilesIPFS.push(mediaFile);
                 uploadedFiles.push(mediaFile);
+                console.log(`✓ Successfully uploaded: ${file.originalname} (IPFS: ${pinataResult.ipfsHash})`);
+            } else {
+                failedFiles.push({
+                    fileName: file.originalname,
+                    error: pinataResult.error
+                });
+                console.error(`✗ Failed to upload ${file.originalname}: ${pinataResult.error}`);
             }
         }
 
         await fir.save();
 
-        return res.json({
-            success: true,
+        const response = {
+            success: uploadedFiles.length > 0,
             message: `${uploadedFiles.length} file(s) uploaded successfully`,
-            uploadedFiles: uploadedFiles
-        });
+            uploadedFiles: uploadedFiles,
+            failedFiles: failedFiles
+        };
+
+        if (failedFiles.length > 0) {
+            response.warning = `${failedFiles.length} file(s) failed to upload`;
+        }
+
+        return res.json(response);
 
     } catch (err) {
         console.error('Error uploading media:', err);
