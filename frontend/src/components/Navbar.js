@@ -16,7 +16,7 @@ const Navbar = () => {
   const navItems = [
     {
       name: "Home",
-      path: user?.userType === "admin" ? "/admin-dashboard" : "/",
+      path: "/",
       icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6",
     },
     {
@@ -33,7 +33,7 @@ const Navbar = () => {
     },
     {
       name: "Resources",
-      path: "/resources",
+      path: "/resources#guides",
       icon: "M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z",
     },
     {
@@ -160,25 +160,39 @@ const Navbar = () => {
                 <div className="flex items-center space-x-3">
                   <Link
                     to="/citizen-login"
-                    className="flex items-center px-5 py-2 text-sm font-semibold text-white rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                    className="text-white flex items-center px-5 py-2 text-sm font-semibold rounded-lg 
+            transition-all duration-300 shadow-lg hover:shadow-xl 
+            transform hover:scale-105"
                     style={{
                       backgroundColor: "#0a50c2",
-                      transition: "all 0.2s ease",
+                      transition: "background-color 0.3s ease",
                     }}
                     onMouseEnter={(e) =>
-                      (e.currentTarget.style.backgroundColor = "#0c64f0")
+                      (e.currentTarget.style.backgroundColor = "#2b6fe0")
                     }
                     onMouseLeave={(e) =>
                       (e.currentTarget.style.backgroundColor = "#0a50c2")
                     }
                   >
-                    🏛️ Citizen Login
+                    Citizen Login
                   </Link>
                   <Link
                     to="/admin-login"
-                    className="flex items-center px-5 py-2 text-sm font-semibold text-white bg-green-700 rounded-lg hover:bg-green-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                    className="text-white flex items-center px-5 py-2 text-sm font-semibold rounded-lg 
+            transition-all duration-300 shadow-lg hover:shadow-xl 
+            transform hover:scale-105"
+                    style={{
+                      backgroundColor: "#fb7414",
+                      transition: "background-color 0.3s ease",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor = "#ff903e")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.backgroundColor = "#fb7414")
+                    }
                   >
-                    👨‍💼 Admin Login
+                    Admin Login
                   </Link>
                 </div>
               )}

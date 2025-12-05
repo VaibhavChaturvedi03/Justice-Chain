@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { showDownloadToast } from "../utils/toastManager";
-import { playClickSound } from "../utils/soundManager";
 import { useLocation } from "react-router-dom";
 
 const Resources = () => {
@@ -8,40 +7,6 @@ const Resources = () => {
   const [activeTab, setActiveTab] = useState(
     location.state?.openTab || "guides"
   );
-  const downloadForms = [
-    {
-      title: "FIR Form (Physical Copy)",
-      description: "Downloadable FIR form for offline submission",
-      fileSize: "2.5 MB",
-      fileType: "PDF",
-      downloads: "25,000+",
-      category: "forms",
-    },
-    {
-      title: "Complaint Form",
-      description: "General complaint form for non-criminal matters",
-      fileSize: "1.8 MB",
-      fileType: "PDF",
-      downloads: "15,000+",
-      category: "forms",
-    },
-    {
-      title: "Witness Statement Form",
-      description: "Form for recording witness statements",
-      fileSize: "2.1 MB",
-      fileType: "PDF",
-      downloads: "8,500+",
-      category: "forms",
-    },
-    {
-      title: "Evidence Submission Form",
-      description: "Form for submitting physical evidence",
-      fileSize: "1.9 MB",
-      fileType: "PDF",
-      downloads: "12,000+",
-      category: "forms",
-    },
-  ];
 
   const legalGuides = [
     {
@@ -170,11 +135,6 @@ const Resources = () => {
   ];
 
   const tabs = [
-    // {
-    //   id: "forms",
-    //   label: "Download Forms",
-    //   icon: "M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
-    // },
     {
       id: "guides",
       label: "Legal Guides",
@@ -245,62 +205,6 @@ const Resources = () => {
           </div>
 
           <div className="p-8">
-            {/* Forms Tab */}
-            {/* {activeTab === "forms" && (
-              <div className="tab-content">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                  Downloadable Forms
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {downloadForms.map((form, index) => (
-                    <div
-                      key={index}
-                      className={`bg-gray-50 rounded-xl p-6 card-interactive animate-stagger-${
-                        (index % 4) + 1
-                      }`}
-                    >
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                            {form.title}
-                          </h3>
-                          <p className="text-gray-600 text-sm mb-3">
-                            {form.description}
-                          </p>
-                          <div className="flex items-center space-x-4 text-sm text-gray-500">
-                            <span>{form.fileType}</span>
-                            <span>•</span>
-                            <span>{form.fileSize}</span>
-                            <span>•</span>
-                            <span>{form.downloads} downloads</span>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => handleDownload(form.title)}
-                          className="ml-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 btn-animate focus-indicator flex items-center"
-                        >
-                          <svg
-                            className="h-4 w-4 mr-2"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                            />
-                          </svg>
-                          Download
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )} */}
-
             {/* Guides Tab */}
             {activeTab === "guides" && (
               <div className="tab-content">
@@ -425,7 +329,6 @@ const Resources = () => {
                       <p className="text-gray-600 text-sm">
                         {contact.description}
                       </p>
-                      
                     </div>
                   ))}
                 </div>
