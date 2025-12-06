@@ -18,9 +18,24 @@ const PORT = 3000;
 
 const abi = JSON.parse(fs.readFileSync('./JusticeChainABI.json', 'utf8'));
 
+const COMPLAINT_CONTRACT_ADDRESS = process.env.COMPLAINT_CONTRACT_ADDRESS || '0xe7e1B7d34F9397059c388aF75138C29Ff42Bf6Fd';
+let complaintAbi = [];
+try {
+    complaintAbi = JSON.parse(fs.readFileSync('./ComplaintABI.json', 'utf8'));
+} catch (e) {
+    console.warn('ComplaintABI.json not found or invalid - complaint features will be disabled until ABI is provided.');
+}
+
 const provider = new ethers.JsonRpcProvider(RPC_URL);
 const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 const contract = new ethers.Contract(CONTRACT_ADDRESS, abi, wallet);
+let complaintContract = null;
+if (COMPLAINT_CONTRACT_ADDRESS && complaintAbi && complaintAbi.length > 0) {
+    complaintContract = new ethers.Contract(COMPLAINT_CONTRACT_ADDRESS, complaintAbi, wallet);
+    console.log('Complaint contract initialized at', COMPLAINT_CONTRACT_ADDRESS);
+} else {
+    console.log('Complaint contract not initialized (ABI or address missing).');
+}
 
 app.get('/', (req, res) => {
     res.send('JusticeChain Backend Running');
@@ -63,7 +78,6 @@ app.post('/api/uploadFIR', async (req, res) => {
 
         const ipfsHash = pinataResponse.data.IpfsHash;
 
-        // include a JSON string of additional incident details expected by the contract
         const incidentDetailsJson = JSON.stringify(firData.incidentDetailsJson || firData || {});
 
         const tx = await contract.createFIR(
@@ -94,6 +108,43 @@ app.post('/api/uploadFIR', async (req, res) => {
         });
     }
 });
+
+    app.post('/api/fileComplaint', async (req, res) => {
+        try {
+            if (!complaintContract) {
+                return res.status(500).json({ success: false, error: 'Complaint contract not configured' });
+            }
+
+            const data = req.body || {};
+
+            const incidentType = data.incidentType || data.incidentType || '';
+            const incidentDate = data.incidentDate || '';
+            const incidentTime = data.incidentTime || '';
+            const incidentLocation = data.incidentLocation || data.location || '';
+            const incidentDescription = data.incidentDescription || data.description || '';
+            const suspectDetails = data.suspectDetails || data.suspectDetails || '';
+            const witnessDetails = data.witnessDetails || data.witnessDetails || '';
+            const evidenceDescription = data.evidenceDescription || data.evidenceDescription || '';
+
+            const tx = await complaintContract.fileComplaint(
+                incidentType,
+                incidentDate,
+                incidentTime,
+                incidentLocation,
+                incidentDescription,
+                suspectDetails,
+                witnessDetails,
+                evidenceDescription
+            );
+
+            await tx.wait();
+
+            return res.json({ success: true, message: 'Complaint filed on chain', txHash: tx.hash });
+        } catch (err) {
+            console.error('Error filing complaint on chain:', err);
+            return res.status(500).json({ success: false, error: err.message || err.toString() });
+        }
+    });
 
 app.listen(PORT, () => {
     console.log(`JusticeChain Backend running on port ${PORT}`);

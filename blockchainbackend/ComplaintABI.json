@@ -1,0 +1,208 @@
+[
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "id",
+				"type": "uint256"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "citizen",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "incidentType",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "incidentDate",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "incidentTime",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "incidentLocation",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "timestamp",
+				"type": "uint256"
+			}
+		],
+		"name": "ComplaintFiled",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_incidentType",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_incidentDate",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_incidentTime",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_incidentLocation",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_incidentDescription",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_suspectDetails",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_witnessDetails",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_evidenceDescription",
+				"type": "string"
+			}
+		],
+		"name": "fileComplaint",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "complaintCount",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_id",
+				"type": "uint256"
+			}
+		],
+		"name": "getComplaintBasic",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "id",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "citizen",
+				"type": "address"
+			},
+			{
+				"internalType": "string",
+				"name": "incidentType",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "incidentDate",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "incidentTime",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "incidentLocation",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "timestamp",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_id",
+				"type": "uint256"
+			}
+		],
+		"name": "getComplaintDetails",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "incidentDescription",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "suspectDetails",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "witnessDetails",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "evidenceDescription",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getTotalComplaints",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+]

@@ -190,6 +190,26 @@ router.post('/uploadFIR', verifyToken, isCitizen, async (req, res) => {
         savedFIR.pdfPath = `/api/downloadFIR/${savedFIR._id}`;
         await savedFIR.save();
 
+        (async () => {
+            try {
+                const complaintPayload = {
+                    incidentType: savedFIR.incidentType,
+                    incidentDate: savedFIR.incidentDate,
+                    incidentTime: savedFIR.incidentTime,
+                    incidentLocation: savedFIR.incidentLocation,
+                    incidentDescription: savedFIR.incidentDescription,
+                    suspectDetails: savedFIR.suspectDetails || '',
+                    witnessDetails: savedFIR.witnessDetails || '',
+                    evidenceDescription: savedFIR.evidenceDescription || ''
+                };
+
+                const bcRes = await require('axios').post('http://localhost:3000/api/fileComplaint', complaintPayload);
+                console.log('Complaint filed on blockchain backend:', bcRes.data);
+            } catch (bcErr) {
+                console.warn('Failed to file complaint on blockchain:', bcErr?.message || bcErr);
+            }
+        })();
+
         return res.json({ success: true, fir: savedFIR });
     } catch (err) {
         console.error('Error saving FIR:', err);
@@ -197,7 +217,6 @@ router.post('/uploadFIR', verifyToken, isCitizen, async (req, res) => {
     }
 });
 
-// Public search endpoint - no authentication required
 router.post('/publicSearch', async (req, res) => {
     try {
         const { searchType, searchValue } = req.body;
@@ -237,7 +256,6 @@ router.post('/publicSearch', async (req, res) => {
                 return res.status(400).json({ success: false, error: 'Invalid search type' });
         }
 
-        // Exclude personal data from public search results
         const results = await FIR.find(query)
             .select('-mediaFilesIPFS -email -phone -address -city -state -pincode -fatherName -age -gender -occupation -idType -idNumber -suspectDetails -witnessDetails -evidenceDescription -previousComplaint -previousComplaintDetails')
             .lean();
