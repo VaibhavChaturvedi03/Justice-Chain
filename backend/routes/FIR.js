@@ -14,6 +14,7 @@ const router = express.Router();
 const FIR = require('../models/fir');
 const nodemailer = require('nodemailer');
 const { getMaxListeners } = require('events');
+const blockchainBase = process.env.BLOCKCHAIN_BACKEND_URL || 'http://localhost:3000';
 
 // Public endpoint: Reverse Geocoding - convert coordinates to city/address
 // NO AUTHENTICATION REQUIRED - available to all users
@@ -517,6 +518,28 @@ router.put('/updateStatus/:id', verifyToken, isAdmin, async (req, res) => {
             return res.status(404).json({ success: false, error: 'FIR not found' });
         }
 
+        // If the status was set to Case Closed, attempt to close/burn NFT on chain if tokenId present
+        try {
+            if (status && status.toLowerCase() === 'case closed') {
+                if (fir.tokenId) {
+                    const blockchainBase = process.env.BLOCKCHAIN_BACKEND_URL || 'http://localhost:3000';
+                    try {
+                        const closeRes = await axios.post(`${blockchainBase}/api/closeFIR`, { tokenId: fir.tokenId });
+                        console.log('closeFIR response:', closeRes.data);
+                        // Push a timeline entry with blockchain close info
+                        fir.timeline.push({ date: new Date().toISOString().split('T')[0], status: 'Chain NFT Burned', description: `Token ${fir.tokenId} burned on chain. TX: ${closeRes.data.txHash || ''}`, officer: 'System' });
+                        await fir.save();
+                    } catch (closeErr) {
+                        console.warn('Failed to close FIR on chain:', closeErr && (closeErr.response?.data || closeErr.message) ? (closeErr.response?.data || closeErr.message) : closeErr);
+                    }
+                } else {
+                    console.log('No tokenId present for FIR, skipping blockchain close.');
+                }
+            }
+        } catch (e) {
+            console.error('Error while attempting blockchain close on status update:', e && e.message ? e.message : e);
+        }
+
         return res.json({ success: true, fir });
     } catch (err) {
         console.error('Error updating FIR status:', err);
@@ -841,6 +864,25 @@ router.post('/notifyRegistration', verifyToken, isAdmin, async (req, res) => {
     } catch (err) {
         console.error('Error in notifyRegistration handler:', err);
         return res.status(500).json({ success: false, error: err.message || err.toString() });
+    }
+});
+
+// Save tokenId returned from blockchain after minting
+router.post('/saveTokenId', verifyToken, isAdmin, async (req, res) => {
+    try {
+        const { firId, tokenId } = req.body || {};
+        if (!firId || !tokenId) return res.status(400).json({ success: false, error: 'firId and tokenId required' });
+
+        const fir = await FIR.findById(firId);
+        if (!fir) return res.status(404).json({ success: false, error: 'FIR not found' });
+
+        fir.tokenId = tokenId;
+        await fir.save();
+
+        return res.json({ success: true, message: 'tokenId saved on FIR', fir });
+    } catch (err) {
+        console.error('Error saving tokenId:', err);
+        return res.status(500).json({ success: false, error: err && err.message ? err.message : String(err) });
     }
 });
 

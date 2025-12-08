@@ -60,32 +60,42 @@ try {
 }
 
 app.get('/', (req, res) => {
-    res.send('JusticeChain Backend Running');
+    res.json({ success: true, message: 'JusticeChain Backend Running' });
+});
+
+// Health check endpoint: returns server + provider status
+app.get('/health', async (req, res) => {
+    const status = { server: true, port: PORT, provider: null, contractLoaded: !!contract, complaintContractLoaded: !!complaintContract };
+    if (provider) {
+        try {
+            // quick provider check
+            const block = await provider.getBlockNumber();
+            status.provider = { ok: true, latestBlock: block };
+        } catch (provErr) {
+            status.provider = { ok: false, error: provErr && provErr.message ? provErr.message : String(provErr) };
+        }
+    } else {
+        status.provider = { ok: false, error: 'No provider configured' };
+    }
+
+    return res.json({ success: true, status });
 });
 
 app.post('/api/uploadFIR', async (req, res) => {
     try {
         console.log('Received FIR Data:', req.body);
 
-        const firData = req.body;
+        const firData = req.body || {};
 
         let severity = 3;
-        try{
-            const airesponse = await axios.post('http://localhost:5050/classify',
-                {description : firData.incidentDescription || ''}
-            )
-
-            const priority = airesponse.data.priority.toLowerCase();
-
-            if(priority === "high") {
-                severity = 3;
-            }
-            else if(priority === 'medium') {
-                severity = 2;
-            }
-            else severity = 1; 
-        } catch(AIerror){
-            console.warn("classification failed , setting severity to 1");
+        try {
+            const airesponse = await axios.post('http://localhost:5050/classify', { description: firData.incidentDescription || '' });
+            const priority = (airesponse.data && airesponse.data.priority || '').toString().toLowerCase();
+            if (priority === 'high') severity = 3;
+            else if (priority === 'medium') severity = 2;
+            else severity = 1;
+        } catch (AIerror) {
+            console.warn('classification failed, setting severity to 1');
             severity = 1;
         }
 
@@ -93,50 +103,98 @@ app.post('/api/uploadFIR', async (req, res) => {
 
         let ipfsHash = null;
         try {
-            const pinataResponse = await axios.post(pinataUrl, {...firData , severity}, {
+            const pinataResponse = await axios.post(pinataUrl, { ...firData, severity }, {
                 headers: {
                     'Content-Type': 'application/json',
                     pinata_api_key: PINATA_API_KEY,
                     pinata_secret_api_key: PINATA_SECRET_API_KEY,
                 },
-                timeout: 10000 // 10 second timeout
+                timeout: 10000,
             });
-            ipfsHash = pinataResponse.data.IpfsHash;
+            ipfsHash = pinataResponse.data && pinataResponse.data.IpfsHash;
             console.log('Pinata upload successful:', ipfsHash);
-        } catch(pinataErr) {
-            console.warn("Pinata upload failed:", pinataErr.message);
-            // Use the existing IPFS hash from the FIR if available
+        } catch (pinataErr) {
+            console.warn('Pinata upload failed:', pinataErr && pinataErr.message ? pinataErr.message : pinataErr);
             ipfsHash = firData.ipfsHash || 'ipfs_pending_' + Date.now();
         }
 
         const incidentDetailsJson = JSON.stringify(firData.incidentDetailsJson || firData || {});
 
-        const tx = await contract.createFIR(
-            firData.incidentType || firData.title || 'Untitled FIR',
-            firData.incidentDescription || firData.description || 'No description',
-            severity,
-            ipfsHash,
-            incidentDetailsJson
-        );
-        console.log("Sending to blockchain:", { severity, firData });
+        if (!contract) {
+            return res.status(500).json({ success: false, message: 'Error uploading FIR', error: 'JusticeChain contract ABI or address not configured on backend' });
+        }
 
-        await tx.wait();
-        console.log('Transaction mined');
+        const citizenAddress = firData.citizenAddress || firData.walletAddress || firData.toAddress;
+        if (!citizenAddress) {
+            return res.status(400).json({ success: false, message: 'Error uploading FIR', error: 'citizen wallet address required in payload (citizenAddress)' });
+        }
 
-        res.json({
-            success: true,
-            message: 'FIR successfully uploaded and saved on blockchain',
-            ipfsHash,
-            txHash: tx.hash,
-        });
+        const metadataUri = `ipfs://${ipfsHash}`;
 
+        console.log('Preparing to send FIR to blockchain (mint or legacy create)...');
+        // Prefer mintFir if present in ABI
+        try {
+            if (contract && typeof contract.mintFir === 'function') {
+                console.log('Using contract.mintFir');
+                const tx = await contract.mintFir(
+                    citizenAddress,
+                    firData.incidentType || firData.title || 'Untitled FIR',
+                    firData.incidentDescription || firData.description || 'No description',
+                    severity,
+                    ipfsHash,
+                    metadataUri
+                );
+
+                console.log('Sending to blockchain (mint)...');
+                const receipt = await tx.wait();
+                console.log('Mint transaction mined', receipt.transactionHash);
+
+                let tokenId = null;
+                try {
+                    for (const log of receipt.logs) {
+                        try {
+                            const parsed = contract.interface.parseLog(log);
+                            if (parsed && parsed.name === 'FIRCreated') {
+                                tokenId = parsed.args && (parsed.args.id || parsed.args[0]);
+                                break;
+                            }
+                        } catch (e) {
+                            // ignore parse errors
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Failed to parse FIRCreated event for tokenId:', e && e.message ? e.message : e);
+                }
+
+                return res.json({ success: true, message: 'FIR minted as NFT on blockchain', ipfsHash, txHash: receipt.transactionHash, tokenId: tokenId !== null ? tokenId.toString() : null });
+            }
+
+            // Fallback to legacy createFIR if present (older contract ABI)
+            if (contract && typeof contract.createFIR === 'function') {
+                console.log('Using contract.createFIR (legacy)');
+                const tx = await contract.createFIR(
+                    firData.incidentType || firData.title || 'Untitled FIR',
+                    firData.incidentDescription || firData.description || 'No description',
+                    severity,
+                    ipfsHash,
+                    incidentDetailsJson
+                );
+
+                console.log('Sending to blockchain (legacy createFIR)...');
+                const receipt = await tx.wait();
+                console.log('Legacy transaction mined', receipt.transactionHash);
+
+                return res.json({ success: true, message: 'FIR uploaded to blockchain (legacy contract)', ipfsHash, txHash: receipt.transactionHash });
+            }
+
+            return res.status(500).json({ success: false, message: 'Error uploading FIR', error: 'Contract ABI does not contain mintFir or createFIR methods' });
+        } catch (chainErr) {
+            console.error('Error sending FIR to chain:', chainErr && chainErr.message ? chainErr.message : chainErr);
+            return res.status(500).json({ success: false, message: 'Error uploading FIR', error: chainErr && chainErr.message ? chainErr.message : String(chainErr) });
+        }
     } catch (error) {
-        console.error('Error uploading FIR:', error.message);
-        res.status(500).json({
-            success: false,
-            message: 'Error uploading FIR',
-            error: error.message,
-        });
+        console.error('Error uploading FIR:', error && error.message ? error.message : error);
+        return res.status(500).json({ success: false, message: 'Error uploading FIR', error: error && error.message ? error.message : String(error) });
     }
 });
 
@@ -148,14 +206,14 @@ app.post('/api/uploadFIR', async (req, res) => {
 
             const data = req.body || {};
 
-            const incidentType = data.incidentType || data.incidentType || '';
+            const incidentType = data.incidentType || '';
             const incidentDate = data.incidentDate || '';
             const incidentTime = data.incidentTime || '';
             const incidentLocation = data.incidentLocation || data.location || '';
             const incidentDescription = data.incidentDescription || data.description || '';
-            const suspectDetails = data.suspectDetails || data.suspectDetails || '';
-            const witnessDetails = data.witnessDetails || data.witnessDetails || '';
-            const evidenceDescription = data.evidenceDescription || data.evidenceDescription || '';
+            const suspectDetails = data.suspectDetails || '';
+            const witnessDetails = data.witnessDetails || '';
+            const evidenceDescription = data.evidenceDescription || '';
 
             const tx = await complaintContract.fileComplaint(
                 incidentType,
@@ -172,8 +230,30 @@ app.post('/api/uploadFIR', async (req, res) => {
 
             return res.json({ success: true, message: 'Complaint filed on chain', txHash: tx.hash });
         } catch (err) {
-            console.error('Error filing complaint on chain:', err);
-            return res.status(500).json({ success: false, error: err.message || err.toString() });
+            console.error('Error filing complaint on chain:', err && err.message ? err.message : err);
+            return res.status(500).json({ success: false, error: err && err.message ? err.message : String(err) });
+        }
+    });
+
+    // Close (burn) an existing FIR NFT by tokenId (only backend wallet/police allowed)
+    app.post('/api/closeFIR', async (req, res) => {
+        try {
+            const { tokenId } = req.body || {};
+            if (!tokenId) return res.status(400).json({ success: false, error: 'tokenId required' });
+
+            if (!contract) {
+                return res.status(500).json({ success: false, error: 'JusticeChain contract not configured on backend' });
+            }
+
+            console.log('Closing FIR tokenId:', tokenId);
+            const tx = await contract.closeFir(tokenId);
+            const receipt = await tx.wait();
+            console.log('closeFir tx mined:', receipt.transactionHash);
+
+            return res.json({ success: true, message: 'FIR closed (burned)', txHash: receipt.transactionHash });
+        } catch (err) {
+            console.error('Error closing FIR on chain:', err && err.message ? err.message : err);
+            return res.status(500).json({ success: false, error: err && err.message ? err.message : String(err) });
         }
     });
 

@@ -250,11 +250,7 @@ export class FIRStorage {
       }
 
       const payload = firDataResp.fir;
-<<<<<<< Updated upstream
-      console.log('registerFIROnChain: Sending to blockchain backend:', payload);
-=======
       if (citizenAddress) payload.citizenAddress = citizenAddress;
->>>>>>> Stashed changes
 
       // Send to blockchain backend service (runs on port 3000) with timeout
       const controller = new AbortController();
@@ -319,6 +315,30 @@ export class FIRStorage {
       return data;
     } catch (error) {
       console.error('Error notifying registration:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Save the blockchain tokenId to the FIR record in main backend
+  static async saveTokenId(firId, tokenId, token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/saveTokenId`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ firId, tokenId })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server error ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error saving tokenId:', error);
       return { success: false, error: error.message };
     }
   }

@@ -143,7 +143,17 @@ const AdminDashboard = () => {
               const chainResult = await FIRStorage.registerFIROnChain(firId, user.token, citizenAddress);
               if (chainResult && chainResult.success) {
                 const txHash = chainResult.txHash || chainResult.tx_hash || chainResult.transactionHash || '';
-                alert(`FIR registered on blockchain successfully${txHash ? `\nTransaction: ${txHash}` : ''}`);
+                const tokenId = chainResult.tokenId || chainResult.tokenId === 0 ? chainResult.tokenId : (chainResult.tokenId || null);
+                alert(`FIR registered on blockchain successfully${txHash ? `\nTransaction: ${txHash}` : ''}${tokenId ? `\nTokenId: ${tokenId}` : ''}`);
+
+                // Persist tokenId on FIR record so we can close/burn later
+                try {
+                  if (tokenId) {
+                    await FIRStorage.saveTokenId(firId, tokenId, user.token);
+                  }
+                } catch (saveErr) {
+                  console.warn('Failed to save tokenId to FIR:', saveErr);
+                }
 
                 // Notify citizen by email via main backend
                 try {
@@ -184,20 +194,35 @@ const AdminDashboard = () => {
       const confirmRegister = window.confirm('Register this FIR on the blockchain? This will create an on-chain record.');
       if (!confirmRegister) return;
 
-      // Call the frontend helper which will fetch FIR data and forward to blockchain backend
-      const result = await FIRStorage.registerFIROnChain(fir._id, user.token);
+      // Prompt for citizen address and call register helper
+      const citizenAddress = window.prompt('Enter citizen wallet address (0x...) to mint NFT for this FIR:');
+      if (!citizenAddress) {
+        alert('Citizen wallet address is required to register FIR on chain.');
+        return;
+      }
+
+      const result = await FIRStorage.registerFIROnChain(fir._id, user.token, citizenAddress);
 
       if (result && result.success) {
         const txHash = result.txHash || result.tx_hash || result.transactionHash || '';
-        console.log('Blockchain registration successful, txHash:', txHash);
-        
+        const tokenId = result.tokenId || null;
+        console.log('Blockchain registration successful, txHash:', txHash, 'tokenId:', tokenId);
+
+        // Persist tokenId on FIR
+        try {
+          if (tokenId) await FIRStorage.saveTokenId(fir._id, tokenId, user.token);
+        } catch (saveErr) {
+          console.warn('Failed to save tokenId:', saveErr);
+        }
+
         // Update status to "Under Investigation" after successful blockchain registration
         console.log('Updating FIR status to Under Investigation');
         await updateFIRStatus(fir._id, 'Under Investigation');
-        
-        alert(`FIR registered on chain successfully${txHash ? `\nTransaction: ${txHash}` : ''}`);
+
+        alert(`FIR registered on chain successfully${txHash ? `\nTransaction: ${txHash}` : ''}${tokenId ? `\nTokenId: ${tokenId}` : ''}`);
       } else {
-        alert('Failed to register FIR on chain: ' + (result && (result.error || result.message) ? (result.error || result.message) : 'Unknown error'));
+        const detailed = result && (result.error || result.message) ? (result.error || result.message) : 'Unknown error';
+        alert('Failed to register FIR on chain: ' + detailed);
       }
     } catch (error) {
       console.error('Error registering FIR on chain:', error);

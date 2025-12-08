@@ -34,6 +34,7 @@ const FIRSchema = new mongoose.Schema({
   pdfPath: String,
   
   ipfsHash: String,
+  tokenId: String,
   ipfsMetadata: {
     uploadedAt: Date,
     fileName: String,
