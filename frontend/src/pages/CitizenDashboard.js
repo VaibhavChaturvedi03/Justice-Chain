@@ -28,7 +28,7 @@ const CitizenDashboard = () => {
 
           const stats = {
             total: myFIRs.length,
-            pending: myFIRs.filter(fir => fir.status === 'FIR Registered').length,
+            pending: myFIRs.filter(fir => fir.status === 'Complaint Registered').length,
             investigating: myFIRs.filter(fir => fir.status === 'Under Investigation').length,
             resolved: myFIRs.filter(fir => fir.status === 'Case Closed').length
           };
@@ -53,7 +53,7 @@ const CitizenDashboard = () => {
 
   const getStatusColor = (status) => {
     switch (status.toLowerCase()) {
-      case 'fir registered':
+      case 'complaint Registered':
         return 'bg-blue-100 text-blue-800';
       case 'under investigation':
         return 'bg-orange-100 text-orange-800';
@@ -126,7 +126,7 @@ const CitizenDashboard = () => {
               </div>
               <div className="ml-4">
                 <p className="text-2xl font-bold text-gray-900">{quickStats.total}</p>
-                <p className="text-sm text-gray-600">Total FIRs</p>
+                <p className="text-sm text-gray-600">Total Complaints</p>
               </div>
             </div>
           </div>
@@ -187,7 +187,7 @@ const CitizenDashboard = () => {
                 </svg>
               </div>
               <div className="ml-4">
-                <h3 className="text-lg font-semibold text-gray-900">File New FIR</h3>
+                <h3 className="text-lg font-semibold text-gray-900">File New Complainant </h3>
                 <p className="text-sm text-gray-600">Submit a new complaint online</p>
               </div>
             </div>
