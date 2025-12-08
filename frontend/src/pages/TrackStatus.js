@@ -1,21 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { FIRStorage } from "../utils/firStorage";
+import { useAuth } from "../contexts/AuthContext";
 
 const TrackStatus = () => {
+  const { user } = useAuth();
   const [searchType, setSearchType] = useState("fir");
   const [searchValue, setSearchValue] = useState("");
   const [searchResult, setSearchResult] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-
-  // Initialize sample data on component mount
-  useEffect(() => {
-    try {
-      FIRStorage.initializeSampleData();
-    } catch (error) {
-      console.error("Error initializing sample data:", error);
-    }
-  }, []);
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -24,20 +16,39 @@ const TrackStatus = () => {
     setIsSearching(true);
     setHasSearched(false);
 
-    // Search in localStorage
-    setTimeout(() => {
-      try {
-        const result = FIRStorage.searchFIR(searchType, searchValue.trim());
-        setSearchResult(result);
-        setHasSearched(true);
-        setIsSearching(false);
-      } catch (error) {
-        console.error("Search error:", error);
-        setSearchResult(null);
-        setHasSearched(true);
-        setIsSearching(false);
+    try {
+      const response = await fetch('http://localhost:5000/api/publicSearch', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          searchType: searchType,
+          searchValue: searchValue.trim()
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Search failed');
       }
-    }, 1500);
+
+      const data = await response.json();
+      console.log('Search result:', data);
+      
+      if (data.success && data.fir) {
+        setSearchResult(data.fir);
+      } else {
+        setSearchResult(null);
+      }
+      
+      setHasSearched(true);
+      setIsSearching(false);
+    } catch (error) {
+      console.error('Search error:', error);
+      setSearchResult(null);
+      setHasSearched(true);
+      setIsSearching(false);
+    }
   };
 
   const getStatusColor = (status) => {

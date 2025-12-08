@@ -936,19 +936,6 @@ const FileFIR = () => {
                       </div>
                     )}
                   </div>
-
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      name="previousComplaint"
-                      checked={formData.previousComplaint}
-                      onChange={handleInputChange}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <label className="ml-2 block text-sm text-gray-700">
-                      Have you filed a complaint regarding this matter before?
-                    </label>
-                  </div>
                   {formData.previousComplaint && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Previous Complaint Details</label>
