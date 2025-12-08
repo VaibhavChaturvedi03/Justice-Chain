@@ -19,6 +19,12 @@ const getPinataHeaders = () => {
 
 const uploadFileToPinata = async (fileBuffer, fileName, mediaType = 'document') => {
   try {
+    console.log('\n=== FIR File Upload to Pinata ===' );
+    console.log('File Name:', fileName);
+    console.log('File Size:', fileBuffer.length, 'bytes');
+    console.log('Media Type:', mediaType);
+    console.log('Timestamp:', new Date().toISOString());
+    
     const form = new FormData();
     form.append('file', fileBuffer, fileName);
 
@@ -66,6 +72,12 @@ const uploadFileToPinata = async (fileBuffer, fileName, mediaType = 'document') 
 
 const uploadJSONToPinata = async (jsonData, fileName) => {
   try {
+    console.log('\n=== FIR JSON Data Upload to Pinata ===' );
+    console.log('File Name:', fileName);
+    console.log('Data Type: FIR');
+    console.log('Timestamp:', new Date().toISOString());
+    console.log('FIR Data:', JSON.stringify(jsonData, null, 2));
+    
     const metadata = {
       name: fileName,
       keyvalues: {

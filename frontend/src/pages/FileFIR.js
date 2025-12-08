@@ -8,6 +8,11 @@ const FileFIR = () => {
   const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [location , setLocation] = useState({
+    lat:"",
+    lng:"",
+    address : ""
+  });
   const [formData, setFormData] = useState({
     fullName: '',
     fatherName: '',
@@ -169,6 +174,67 @@ const FileFIR = () => {
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1048576) return Math.round(bytes / 1024) + ' KB';
     return Math.round(bytes / 1048576) + ' MB';
+  };
+
+  // Handle Get Location
+  const handleGetLocation = async () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser');
+      return;
+    }
+
+    try {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+
+          setLocation(prev => ({ ...prev, lat, lng }));
+
+          try {
+            // Call backend endpoint for reverse geocoding (avoids CORS issues)
+            // No authentication required for this public endpoint
+            const geoRes = await fetch('http://localhost:5000/api/reverseGeocode', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ lat, lng })
+            });
+
+            const geoData = await geoRes.json();
+
+            if (!geoData.success) {
+              throw new Error(geoData.error || 'Failed to get location data');
+            }
+
+            setFormData(prev => ({
+              ...prev,
+              city: geoData.city,
+              address: geoData.address
+            }));
+
+            setLocation(prev => ({
+              ...prev,
+              address: geoData.address
+            }));
+
+            alert(`Location detected!\nCity: ${geoData.city}\nLatitude: ${lat.toFixed(4)}, Longitude: ${lng.toFixed(4)}`);
+          } catch (geoError) {
+            console.error('Geocoding error:', geoError);
+            alert('Could not determine city from coordinates. Please enter manually.');
+          }
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+          alert('Unable to access your location. Please enable GPS and try again.');
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    } catch (error) {
+      console.error('Error:', error);
+      alert('An error occurred while getting your location');
+    }
   };
 
   const validateStep = (step) => {
@@ -598,6 +664,17 @@ const FileFIR = () => {
                       placeholder="Enter city"
                       required
                     />
+                    <button
+                      type="button"
+                      onClick={handleGetLocation}
+                      className="mt-2 w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      Get My Location
+                    </button>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">State *</label>
