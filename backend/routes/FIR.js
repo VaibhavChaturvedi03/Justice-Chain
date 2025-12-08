@@ -158,7 +158,7 @@ router.post('/uploadFIR', verifyToken, isCitizen, async (req, res) => {
         doc.moveDown(0.2);
         doc.fontSize(10).font('Helvetica').text('[Police Station Name / Jurisdiction]', { align: 'center' });
         doc.moveDown(0.6);
-        doc.fontSize(16).font('Helvetica-Bold').text('FIRST INFORMATION REPORT (FIR)', { align: 'center' });
+        doc.fontSize(16).font('Helvetica-Bold').text('Complaint Copy', { align: 'center' });
         doc.moveDown(0.3);
         doc.fontSize(9).font('Helvetica-Oblique').text('Generated via JusticeChain System', { align: 'center' });
         doc.moveDown();
@@ -166,7 +166,7 @@ router.post('/uploadFIR', verifyToken, isCitizen, async (req, res) => {
         doc.moveDown(0.2);
         const leftX = doc.page.margins.left;
         const midX = leftX + 260;
-        doc.fontSize(12).font('Helvetica-Bold').text('2. FIR Metadata', leftX, doc.y);
+        doc.fontSize(12).font('Helvetica-Bold').text('2. Complaint Metadata', leftX, doc.y);
         doc.moveDown(0.2);
 
         function ensureSpace(lines = 1) {
@@ -185,8 +185,8 @@ router.post('/uploadFIR', verifyToken, isCitizen, async (req, res) => {
         const rightX = midX + 10;
         const rightWidth = doc.page.width - doc.page.margins.right - rightX;
 
-        twoCol('FIR ID', savedFIR._id.toString());
-        twoCol('FIR Number', savedFIR.firNumber || '-');
+        twoCol('Complaint ID', savedFIR._id.toString());
+        twoCol('complaint Number', savedFIR.firNumber || '-');
         twoCol('Date & Time of Filing', filedDate);
         twoCol('IPFS Hash', savedFIR.ipfsHash || 'Pending');
         twoCol('Severity Score', savedFIR.severity != null ? savedFIR.severity : 'N/A');
@@ -250,13 +250,19 @@ router.post('/uploadFIR', verifyToken, isCitizen, async (req, res) => {
         twoCol('Urgency Level', savedFIR.urgencyLevel || 'N/A');
 
         doc.moveDown(0.5);
-        doc.fontSize(9).font('Helvetica-Oblique').text('This FIR is stored securely on decentralized IPFS and MongoDB. All data is encrypted and immutable.');
+        doc.fontSize(9).font('Helvetica-Oblique').text('This complaint is stored securely on decentralized IPFS and MongoDB. All data is encrypted and immutable.');
 
         doc.end();
 
         await new Promise((resolve, reject) => {
-            stream.on('finish', resolve);
-            stream.on('error', reject);
+            stream.on('finish', () => {
+                console.log('✅ PDF file created successfully:', pdfPath);
+                resolve();
+            });
+            stream.on('error', (err) => {
+                console.error('❌ Error writing PDF file:', err);
+                reject(err);
+            });
         });
 
         savedFIR.complaintPdfPath = `/api/downloadComplaint/${savedFIR._id}`;
@@ -333,8 +339,16 @@ router.post('/publicSearch', async (req, res) => {
             .select('-mediaFilesIPFS -email -phone -address -city -state -pincode -fatherName -age -gender -occupation -idType -idNumber -suspectDetails -witnessDetails -evidenceDescription -previousComplaint -previousComplaintDetails')
             .lean();
 
+        if (results.length === 0) {
+            return res.json({
+                success: false,
+                message: 'No FIR found'
+            });
+        }
+
         return res.json({
             success: true,
+            fir: results[0],
             count: results.length,
             results: results
         });
@@ -554,8 +568,122 @@ router.get('/downloadFIR/:id', verifyToken, async (req, res) => {
         if (!fir) return res.status(404).json({ success: false, error: 'FIR not found' });
 
         const pdfFile = path.join(__dirname, '..', 'fir_pdfs', `fir_${fir._id}.pdf`);
+        
+        // If PDF doesn't exist, generate it on-demand
         if (!fs.existsSync(pdfFile)) {
-            return res.status(404).json({ success: false, error: 'PDF not found' });
+            console.log('📝 Generating PDF on-demand for FIR:', fir._id);
+            
+            const doc = new PDFDocument({ autoFirstPage: true, margin: 50 });
+            const stream = fs.createWriteStream(pdfFile);
+            doc.pipe(stream);
+
+            const nowDate = new Date().toISOString().split('T')[0];
+            const filedDate = fir.filedDate || nowDate;
+
+            doc.fontSize(12).font('Helvetica-Bold').text('Government of India / State Police Department', { align: 'center' });
+            doc.moveDown(0.2);
+            doc.fontSize(10).font('Helvetica').text('[Police Station Name / Jurisdiction]', { align: 'center' });
+            doc.moveDown(0.6);
+            doc.fontSize(16).font('Helvetica-Bold').text('FIRST INFORMATION REPORT (FIR)', { align: 'center' });
+            doc.moveDown(0.3);
+            doc.fontSize(9).font('Helvetica-Oblique').text('Generated via JusticeChain System', { align: 'center' });
+            doc.moveDown();
+
+            const leftX = doc.page.margins.left;
+            const midX = leftX + 260;
+
+            function ensureSpace(lines = 1) {
+                const lineHeight = 14 * lines;
+                if (doc.y + lineHeight > doc.page.height - doc.page.margins.bottom) doc.addPage();
+            }
+
+            function twoCol(key, value) {
+                ensureSpace(2);
+                const y = doc.y;
+                doc.font('Helvetica-Bold').fontSize(10).text(key, leftX, y);
+                doc.font('Helvetica').fontSize(10).text(value || '-', midX, y);
+                doc.moveDown(1.6);
+            }
+
+            doc.fontSize(12).font('Helvetica-Bold').text('2. FIR Metadata', leftX, doc.y);
+            doc.moveDown(0.2);
+
+            twoCol('FIR ID', fir._id.toString());
+            twoCol('FIR Number', fir.firNumber || '-');
+            twoCol('Date & Time of Filing', filedDate);
+            twoCol('IPFS Hash', fir.ipfsHash || 'Pending');
+            twoCol('Severity Score', fir.severity != null ? fir.severity : 'N/A');
+
+            doc.fontSize(12).font('Helvetica-Bold').text('3. Complainant / Personal Information', leftX, doc.y);
+            doc.moveDown(0.2);
+            doc.fontSize(11).font('Helvetica').list([
+                `Full Name: ${fir.fullName || '-'}`,
+                `Father's Name: ${fir.fatherName || '-'}`,
+                `Gender: ${fir.gender || '-'}`,
+                `Age: ${fir.age || '-'}`,
+                `Occupation: ${fir.occupation || '-'}`,
+                `Phone Number: ${fir.phone || '-'}`,
+                `Email Address: ${fir.email || '-'}`,
+                `Address: ${fir.address || '-'}`,
+                `City: ${fir.city || '-'}`,
+                `State: ${fir.state || '-'}`,
+                `Pincode: ${fir.pincode || '-'}`,
+                `ID Type: ${fir.idType || '-'}`,
+                `ID Number: ${fir.idNumber || '-'}`
+            ], leftX, doc.y, { bulletRadius: 2 });
+            doc.moveDown(0.4);
+
+            doc.moveDown(0.5);
+            doc.fontSize(12).font('Helvetica-Bold').text('4. Incident Details', leftX, doc.y);
+            doc.moveDown(0.2);
+            doc.fontSize(11).font('Helvetica').list([
+                `Type of Incident: ${fir.incidentType || '-'}`,
+                `Date of Incident: ${fir.incidentDate || '-'}`,
+                `Time of Incident: ${fir.incidentTime || '-'}`,
+                `Location of Incident: ${fir.incidentLocation || '-'}`
+            ], leftX, doc.y, { bulletRadius: 2 });
+            doc.moveDown(0.3);
+            doc.fontSize(11).font('Helvetica-Bold').text('Incident Description:');
+            doc.moveDown(0.1);
+            doc.fontSize(11).font('Helvetica').text(fir.incidentDescription || '-', { align: 'left' });
+
+            doc.moveDown(0.5);
+            doc.fontSize(12).font('Helvetica-Bold').text('5. Additional Case Information');
+            doc.moveDown(0.2);
+            if (fir.suspectDetails) {
+                doc.fontSize(11).font('Helvetica-Bold').text('Suspect Details (if provided):');
+                doc.fontSize(11).font('Helvetica').text(fir.suspectDetails || '-');
+                doc.moveDown(0.2);
+            }
+            if (fir.witnessDetails) {
+                doc.fontSize(11).font('Helvetica-Bold').text('Witness Details (if any):');
+                doc.fontSize(11).font('Helvetica').text(fir.witnessDetails || '-');
+                doc.moveDown(0.2);
+            }
+            if (fir.evidenceDescription) {
+                doc.fontSize(11).font('Helvetica-Bold').text('Evidence Description:');
+                doc.fontSize(11).font('Helvetica').text(fir.evidenceDescription || '-');
+                doc.moveDown(0.2);
+            }
+
+            doc.moveDown(0.5);
+            doc.fontSize(12).font('Helvetica-Bold').text('6. Case Status');
+            doc.moveDown(0.2);
+            twoCol('Current Status', fir.status || 'Complaint Registered');
+            twoCol('Urgency Level', fir.urgencyLevel || 'N/A');
+
+            doc.moveDown(0.5);
+            doc.fontSize(9).font('Helvetica-Oblique').text('This FIR is stored securely on decentralized IPFS and MongoDB. All data is encrypted and immutable.');
+
+            doc.end();
+
+            await new Promise((resolve, reject) => {
+                stream.on('finish', () => {
+                    console.log('✅ PDF generated on-demand:', pdfFile);
+                    resolve();
+                });
+                stream.on('error', reject);
+            });
         }
 
         res.setHeader('Content-Type', 'application/pdf');

@@ -631,6 +631,33 @@ const AdminDashboard = () => {
                           >
                             View Details
                           </button>
+                          <button
+                            onClick={async () => {
+                              try {
+                                const resp = await fetch(`http://localhost:5000/api/downloadFIR/${fir._id}`, {
+                                  headers: {
+                                    'Authorization': `Bearer ${user.token}`
+                                  }
+                                });
+                                if (!resp.ok) throw new Error('Download failed');
+                                const blob = await resp.blob();
+                                const url = window.URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = `${fir.firNumber || 'fir'}.pdf`;
+                                document.body.appendChild(a);
+                                a.click();
+                                a.remove();
+                                window.URL.revokeObjectURL(url);
+                              } catch (err) {
+                                console.error('Download error:', err);
+                                alert('Failed to download FIR PDF.');
+                              }
+                            }}
+                            className="text-xs bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition-colors"
+                          >
+                            Download PDF
+                          </button>
                           {fir.status === 'Complaint Registered' || fir.status === 'FIR Registered' ? (
                             <button
                               onClick={() => handleRegisterOnChain(fir)}

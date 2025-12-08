@@ -118,11 +118,23 @@ app.post('/api/uploadFIR', async (req, res) => {
             ipfsHash = firData.ipfsHash || 'ipfs_pending_' + Date.now();
         }
 
+        if (!complaintContract) {
+            return res.status(500).json({ success: false, error: 'Complaint contract not configured' });
+        }
+
         const incidentDetailsJson = JSON.stringify(firData.incidentDetailsJson || firData || {});
 
-        if (!contract) {
-            return res.status(500).json({ success: false, message: 'Error uploading FIR', error: 'JusticeChain contract ABI or address not configured on backend' });
-        }
+        const tx = await complaintContract.fileComplaint(
+            firData.incidentType || firData.title || 'Untitled FIR',
+            firData.incidentDate || new Date().toISOString().split('T')[0],
+            firData.incidentTime || new Date().toTimeString().split(' ')[0],
+            firData.incidentLocation || firData.location || 'Location not specified',
+            firData.incidentDescription || firData.description || 'No description',
+            firData.suspectDetails || 'No suspect details',
+            firData.witnessDetails || 'No witness details',
+            firData.evidenceDescription || 'No evidence description'
+        );
+        console.log("Sending to blockchain:", { firData, ipfsHash });
 
         const citizenAddress = firData.citizenAddress || firData.walletAddress || firData.toAddress;
         if (!citizenAddress) {
