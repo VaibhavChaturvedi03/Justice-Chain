@@ -135,20 +135,26 @@ const AdminDashboard = () => {
         // If the admin marked the FIR as 'FIR Registered', register it on-chain
         if (newStatus === 'FIR Registered') {
           try {
-            const chainResult = await FIRStorage.registerFIROnChain(firId, user.token);
-            if (chainResult && chainResult.success) {
-              const txHash = chainResult.txHash || chainResult.tx_hash || chainResult.transactionHash || '';
-              alert(`FIR registered on blockchain successfully${txHash ? `\nTransaction: ${txHash}` : ''}`);
-
-              // Notify citizen by email via main backend
-              try {
-                await FIRStorage.notifyRegistration(firId, txHash, user.token);
-              } catch (notifyErr) {
-                console.warn('Failed to notify citizen about chain registration:', notifyErr);
-              }
+            // Prompt admin for citizen wallet address (required to mint NFT)
+            const citizenAddress = window.prompt('Enter citizen wallet address (0x...) to mint NFT for this FIR:');
+            if (!citizenAddress) {
+              alert('Citizen wallet address is required to register FIR on chain.');
             } else {
-              console.warn('Register on chain returned failure:', chainResult);
-              alert('FIR status updated but failed to register on blockchain. Check console for details.');
+              const chainResult = await FIRStorage.registerFIROnChain(firId, user.token, citizenAddress);
+              if (chainResult && chainResult.success) {
+                const txHash = chainResult.txHash || chainResult.tx_hash || chainResult.transactionHash || '';
+                alert(`FIR registered on blockchain successfully${txHash ? `\nTransaction: ${txHash}` : ''}`);
+
+                // Notify citizen by email via main backend
+                try {
+                  await FIRStorage.notifyRegistration(firId, txHash, user.token);
+                } catch (notifyErr) {
+                  console.warn('Failed to notify citizen about chain registration:', notifyErr);
+                }
+              } else {
+                console.warn('Register on chain returned failure:', chainResult);
+                alert('FIR status updated but failed to register on blockchain. Check console for details.');
+              }
             }
           } catch (chainErr) {
             console.error('Error registering FIR on chain after status update:', chainErr);
@@ -176,17 +182,10 @@ const AdminDashboard = () => {
 
       // Provide immediate feedback
       const confirmRegister = window.confirm('Register this FIR on the blockchain? This will create an on-chain record.');
-      if (!confirmRegister) {
-        console.log('User cancelled blockchain registration');
-        return;
-      }
+      if (!confirmRegister) return;
 
-      console.log('Starting blockchain registration for FIR:', fir._id);
-      
       // Call the frontend helper which will fetch FIR data and forward to blockchain backend
       const result = await FIRStorage.registerFIROnChain(fir._id, user.token);
-      
-      console.log('Blockchain registration result:', result);
 
       if (result && result.success) {
         const txHash = result.txHash || result.tx_hash || result.transactionHash || '';
@@ -198,7 +197,6 @@ const AdminDashboard = () => {
         
         alert(`FIR registered on chain successfully${txHash ? `\nTransaction: ${txHash}` : ''}`);
       } else {
-        console.error('Blockchain registration failed:', result);
         alert('Failed to register FIR on chain: ' + (result && (result.error || result.message) ? (result.error || result.message) : 'Unknown error'));
       }
     } catch (error) {

@@ -221,7 +221,7 @@ export class FIRStorage {
   }
 
   // Register FIR on blockchain by calling the blockchain backend
-  static async registerFIROnChain(firId, token) {
+  static async registerFIROnChain(firId, token, citizenAddress) {
     try {
       console.log('registerFIROnChain: Fetching FIR data for:', firId);
       
@@ -250,7 +250,11 @@ export class FIRStorage {
       }
 
       const payload = firDataResp.fir;
+<<<<<<< Updated upstream
       console.log('registerFIROnChain: Sending to blockchain backend:', payload);
+=======
+      if (citizenAddress) payload.citizenAddress = citizenAddress;
+>>>>>>> Stashed changes
 
       // Send to blockchain backend service (runs on port 3000) with timeout
       const controller = new AbortController();
@@ -285,7 +289,12 @@ export class FIRStorage {
         return { success: false, error: 'Blockchain backend timeout - is it running on port 3000?' };
       }
       console.error('Error registering FIR on chain:', error);
-      return { success: false, error: error.message };
+      // Provide a clearer error message when the blockchain backend is unreachable
+      const msg = error && error.message ? error.message : String(error);
+      if (msg.toLowerCase().includes('failed to fetch') || msg.toLowerCase().includes('networkrequestfailed') || msg.toLowerCase().includes('networkerror')) {
+        return { success: false, error: 'Could not reach blockchain backend at http://localhost:3000. Is the blockchain backend running? ' + msg };
+      }
+      return { success: false, error: msg };
     }
   }
 
