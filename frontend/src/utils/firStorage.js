@@ -264,6 +264,31 @@ export class FIRStorage {
     }
   }
 
+  // Notify main backend to email citizen about a successful registration on chain
+  static async notifyRegistration(firId, txHash, token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/notifyRegistration`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ firId, txHash })
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Server error ${response.status}: ${text}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error notifying registration:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
   // Upload media files (photos, videos) to a FIR
   static async uploadMediaToFIR(firId, files, token) {
     try {

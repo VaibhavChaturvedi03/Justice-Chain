@@ -397,9 +397,37 @@ const FileFIR = () => {
 
         setCurrentStep(1);
 
-        setTimeout(() => {
-          navigate('/citizen-dashboard');
-        }, 2000);
+        // Attempt to automatically download the complaint copy (protected endpoint)
+        (async () => {
+          try {
+            const complaintPath = result.fir.complaintPdfPath;
+            if (complaintPath) {
+              const pdfRes = await fetch(`http://localhost:5000${complaintPath}`, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${user.token}` }
+              });
+              if (pdfRes.ok) {
+                const blob = await pdfRes.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${result.fir.firNumber || 'complaint'}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+              } else {
+                console.warn('Could not download complaint PDF:', await pdfRes.text());
+              }
+            }
+          } catch (dlErr) {
+            console.warn('Automatic complaint download failed:', dlErr);
+          } finally {
+            setTimeout(() => {
+              navigate('/citizen-dashboard');
+            }, 1200);
+          }
+        })();
       } else {
         alert('❌ FIR submission failed: ' + (result.message || 'Unknown error.'));
       }

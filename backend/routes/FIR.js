@@ -11,6 +11,8 @@ dotenv.config();
 
 const router = express.Router();
 const FIR = require('../models/fir');
+const nodemailer = require('nodemailer');
+const { getMaxListeners } = require('events');
 
 function generateFIRNumber() {
     const year = new Date().getFullYear();
@@ -187,6 +189,7 @@ router.post('/uploadFIR', verifyToken, isCitizen, async (req, res) => {
             stream.on('error', reject);
         });
 
+        savedFIR.complaintPdfPath = `/api/downloadComplaint/${savedFIR._id}`;
         savedFIR.pdfPath = `/api/downloadFIR/${savedFIR._id}`;
         await savedFIR.save();
 
@@ -350,7 +353,6 @@ router.get('/getUserFIRs', verifyToken, isCitizen, async (req, res) => {
     }
 });
 
-// Public endpoint for CurrentCases page - no authentication required
 router.get('/publicFIRs', async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
@@ -385,15 +387,17 @@ router.get('/getAllFIRs', verifyToken, isAdmin, async (req, res) => {
         const skip = (page - 1) * limit;
 
         const admin = await Admin.findOne({ email: req.user.email });
+        console.log('getAllFIRs called by admin:', req.user.email, 'adminRecord:', !!admin);
+        if (admin) console.log('admin.state=', admin.state);
         
         let query = {};
         
-        // Filter FIRs by admin's state
         if (admin && admin.state) {
             query = { state: admin.state };
         }
 
         const total = await FIR.countDocuments(query);
+        console.log(`FIR count for query ${JSON.stringify(query)} => ${total}`);
         const firs = await FIR.find(query)
             .select('-mediaFilesIPFS')  
             .sort({ createdAt: -1 })
@@ -469,6 +473,97 @@ router.get('/downloadFIR/:id', verifyToken, async (req, res) => {
         fileStream.pipe(res);
     } catch (err) {
         console.error('Error downloading FIR PDF:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Download complaint copy (PDF) for a FIR's complaint data
+router.get('/downloadComplaint/:id', verifyToken, async (req, res) => {
+    try {
+        const id = req.params.id;
+        const fir = await FIR.findById(id).lean();
+        if (!fir) return res.status(404).json({ success: false, error: 'FIR not found' });
+
+        const pdfFile = path.join(__dirname, '..', 'fir_pdfs', `complaint_${fir._id}.pdf`);
+
+        // If PDF file doesn't exist, generate it
+        if (!fs.existsSync(pdfFile)) {
+            const doc = new PDFDocument({ autoFirstPage: true, margin: 50 });
+            const stream = fs.createWriteStream(pdfFile);
+            doc.pipe(stream);
+
+            const nowDate = new Date().toISOString().split('T')[0];
+            const complaintNumber = `CMP${new Date().getFullYear()}${fir._id.toString().slice(-6)}`;
+
+            doc.fontSize(12).font('Helvetica-Bold').text('Government of India / State Police Department', { align: 'center' });
+            doc.moveDown(0.2);
+            doc.fontSize(10).font('Helvetica').text('[Police Station Name / Jurisdiction]', { align: 'center' });
+            doc.moveDown(0.6);
+            doc.fontSize(16).font('Helvetica-Bold').text('COMPLAINT REGISTRATION FORM', { align: 'center' });
+            doc.moveDown(0.3);
+            doc.fontSize(9).font('Helvetica-Oblique').text('Generated via JusticeChain System', { align: 'center' });
+            doc.moveDown();
+
+            const leftX = doc.page.margins.left;
+            const midX = leftX + 260;
+
+            function twoCol(key, value) {
+                const y = doc.y;
+                doc.font('Helvetica-Bold').fontSize(10).text(key, leftX, y);
+                doc.font('Helvetica').fontSize(10).text(value || '-', midX, y);
+                doc.moveDown(1.6);
+            }
+
+            twoCol('Complaint Number', complaintNumber);
+            twoCol('FIR Number (if any)', fir.firNumber || '-');
+            twoCol('Date & Time of Filing', fir.filedDate || nowDate);
+            twoCol('Complainant Name', fir.fullName || '-');
+            twoCol('Phone', fir.phone || '-');
+            twoCol('Email', fir.email || '-');
+            twoCol('Incident Type', fir.incidentType || '-');
+            twoCol('Incident Date', fir.incidentDate || '-');
+            twoCol('Incident Time', fir.incidentTime || '-');
+            twoCol('Location', fir.incidentLocation || '-');
+
+            doc.moveDown(0.2);
+            doc.fontSize(11).font('Helvetica-Bold').text('Incident Description:');
+            doc.moveDown(0.1);
+            doc.fontSize(11).font('Helvetica').text(fir.incidentDescription || '-', { align: 'left' });
+
+            doc.moveDown(0.5);
+            if (fir.suspectDetails) {
+                doc.fontSize(11).font('Helvetica-Bold').text('Suspect Details:');
+                doc.fontSize(11).font('Helvetica').text(fir.suspectDetails || '-');
+                doc.moveDown(0.2);
+            }
+            if (fir.witnessDetails) {
+                doc.fontSize(11).font('Helvetica-Bold').text('Witness Details:');
+                doc.fontSize(11).font('Helvetica').text(fir.witnessDetails || '-');
+                doc.moveDown(0.2);
+            }
+            if (fir.evidenceDescription) {
+                doc.fontSize(11).font('Helvetica-Bold').text('Evidence Description:');
+                doc.fontSize(11).font('Helvetica').text(fir.evidenceDescription || '-');
+                doc.moveDown(0.2);
+            }
+
+            doc.fontSize(9).font('Helvetica-Oblique').text('This complaint record has been generated for your reference. For official actions, contact your local police station.', { align: 'left' });
+
+            doc.end();
+
+            await new Promise((resolve, reject) => {
+                stream.on('finish', resolve);
+                stream.on('error', reject);
+            });
+        }
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="complaint_${fir.firNumber || fir._id}.pdf"`);
+
+        const fileStream = fs.createReadStream(pdfFile);
+        fileStream.pipe(res);
+    } catch (err) {
+        console.error('Error downloading complaint PDF:', err);
         res.status(500).json({ success: false, error: err.message });
     }
 });
@@ -622,4 +717,111 @@ router.get('/getStatistics', verifyToken, isAdmin, async (req, res) => {
     }
 });
 
+// Notify citizen by email that their FIR was registered on-chain
+router.post('/notifyRegistration', verifyToken, isAdmin, async (req, res) => {
+    try {
+        const { firId, txHash } = req.body;
+        if (!firId) return res.status(400).json({ success: false, error: 'firId required' });
+
+        const fir = await FIR.findById(firId);
+        if (!fir) return res.status(404).json({ success: false, error: 'FIR not found' });
+
+        const emailTo = fir.email;
+        if (!emailTo) return res.status(400).json({ success: false, error: 'No email associated with FIR' });
+
+        // SMTP configuration from environment
+        const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
+        const smtpPort = process.env.SMTP_PORT || 587;
+        const smtpUser = process.env.SMTP_USER;
+        const smtpPass = process.env.SMTP_PASS;
+        const fromEmail = process.env.FROM_EMAIL || smtpUser;
+
+        if (!smtpHost || !smtpUser || !smtpPass) {
+            console.error('Missing SMTP environment variables:', { smtpHost, smtpPort, smtpUser: !!smtpUser });
+            return res.status(500).json({ success: false, error: 'SMTP configuration missing in environment' });
+        }
+
+        const transporter = nodemailer.createTransport({
+            host: smtpHost,
+            port: parseInt(smtpPort, 10),
+            secure: parseInt(smtpPort, 10) === 465,
+            auth: { user: smtpUser, pass: smtpPass }
+        });
+
+        // Verify SMTP connection before sending
+        try {
+            await transporter.verify();
+            console.log('SMTP transporter verified');
+        } catch (verifyErr) {
+            console.error('SMTP verification failed:', verifyErr && verifyErr.message ? verifyErr.message : verifyErr);
+            return res.status(500).json({ success: false, error: 'SMTP verification failed', details: verifyErr && verifyErr.message });
+        }
+
+        const trackUrl = `${req.protocol}://${req.get('host')}/track/${fir.firNumber || fir._id}`;
+        const subject = 'Your FIR has been registered on JusticeChain';
+        const text = `Dear ${fir.fullName || 'Citizen'},\n\nYour FIR has been registered on the blockchain.\n\nFIR Number: ${fir.firNumber || ''}\nTransaction: ${txHash || ''}\nYou can track your FIR at: ${trackUrl}\n\nRegards,\nJusticeChain Team`;
+
+        try {
+            const info = await transporter.sendMail({ from: fromEmail, to: emailTo, subject, text });
+            console.log('Notification email sent:', info && info.messageId ? info.messageId : info);
+            return res.json({ success: true, message: 'Notification sent', info });
+        } catch (sendErr) {
+            console.error('Error sending notification email:', sendErr && sendErr.message ? sendErr.message : sendErr);
+            return res.status(500).json({ success: false, error: 'Failed to send email', details: sendErr && sendErr.message });
+        }
+    } catch (err) {
+        console.error('Error in notifyRegistration handler:', err);
+        return res.status(500).json({ success: false, error: err.message || err.toString() });
+    }
+});
+
+// Admin-only: test email endpoint to validate SMTP settings
+router.post('/testEmail', verifyToken, isAdmin, async (req, res) => {
+    try {
+        const { to, subject, text } = req.body;
+        if (!to) return res.status(400).json({ success: false, error: 'to email required' });
+
+        const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
+        const smtpPort = process.env.SMTP_PORT || 587;
+        const smtpUser = 'vaibhavchaturvedi.work@gmail.com';
+        const smtpPass = odxtiwwyjefqalvv;
+        const fromEmail = process.env.FROM_EMAIL || smtpUser;
+
+        if (!smtpHost || !smtpUser || !smtpPass) {
+            console.error('Missing SMTP env for testEmail:', { smtpHost, smtpPort, smtpUser: !!smtpUser });
+            return res.status(500).json({ success: false, error: 'SMTP configuration missing in environment' });
+        }
+
+        const transporter = nodemailer.createTransport({
+            host: smtpHost,
+            port: parseInt(smtpPort, 10),
+            secure: parseInt(smtpPort, 10) === 465,
+            auth: { user: smtpUser, pass: smtpPass }
+        });
+
+        await transporter.verify();
+        const info = await transporter.sendMail({ from: fromEmail, to, subject: subject || 'JusticeChain Test Email', text: text || 'This is a test email from JusticeChain' });
+        return res.json({ success: true, info });
+    } catch (err) {
+        console.error('Test email failed:', err && err.message ? err.message : err);
+        return res.status(500).json({ success: false, error: err && err.message ? err.message : err.toString() });
+    }
+});
+
 module.exports = router;
+
+// Debug endpoint (admin-only) to inspect FIR counts and admin state quickly
+// Note: This is for development only; remove or protect in production.
+router.get('/debug/admin-firs', verifyToken, isAdmin, async (req, res) => {
+    try {
+        const admin = await Admin.findOne({ email: req.user.email });
+        const query = (admin && admin.state) ? { state: admin.state } : {};
+        const total = await FIR.countDocuments(query);
+        const sample = await FIR.findOne(query).select('-mediaFilesIPFS').lean();
+        return res.json({ success: true, adminEmail: req.user.email, adminState: admin?.state || null, query, total, sample });
+    } catch (err) {
+        console.error('Debug endpoint error:', err);
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+

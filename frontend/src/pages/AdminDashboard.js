@@ -138,6 +138,13 @@ const AdminDashboard = () => {
             if (chainResult && chainResult.success) {
               const txHash = chainResult.txHash || chainResult.tx_hash || chainResult.transactionHash || '';
               alert(`FIR registered on blockchain successfully${txHash ? `\nTransaction: ${txHash}` : ''}`);
+
+              // Notify citizen by email via main backend
+              try {
+                await FIRStorage.notifyRegistration(firId, txHash, user.token);
+              } catch (notifyErr) {
+                console.warn('Failed to notify citizen about chain registration:', notifyErr);
+              }
             } else {
               console.warn('Register on chain returned failure:', chainResult);
               alert('FIR status updated but failed to register on blockchain. Check console for details.');
