@@ -81,6 +81,7 @@ const AdminDashboard = () => {
 
   const getStatusColor = (status) => {
     switch (status.toLowerCase()) {
+      case 'complaint registered':
       case 'fir registered':
         return 'bg-blue-100 text-blue-800';
       case 'under investigation':
@@ -165,22 +166,39 @@ const AdminDashboard = () => {
 
   const handleRegisterOnChain = async (fir) => {
     try {
+      console.log('handleRegisterOnChain clicked for FIR:', fir._id, 'Status:', fir.status);
+      
       if (!user || !user.token) {
+        console.error('No user or token found');
         alert('Authentication required');
         return;
       }
 
       // Provide immediate feedback
       const confirmRegister = window.confirm('Register this FIR on the blockchain? This will create an on-chain record.');
-      if (!confirmRegister) return;
+      if (!confirmRegister) {
+        console.log('User cancelled blockchain registration');
+        return;
+      }
 
+      console.log('Starting blockchain registration for FIR:', fir._id);
+      
       // Call the frontend helper which will fetch FIR data and forward to blockchain backend
       const result = await FIRStorage.registerFIROnChain(fir._id, user.token);
+      
+      console.log('Blockchain registration result:', result);
 
       if (result && result.success) {
         const txHash = result.txHash || result.tx_hash || result.transactionHash || '';
+        console.log('Blockchain registration successful, txHash:', txHash);
+        
+        // Update status to "Under Investigation" after successful blockchain registration
+        console.log('Updating FIR status to Under Investigation');
+        await updateFIRStatus(fir._id, 'Under Investigation');
+        
         alert(`FIR registered on chain successfully${txHash ? `\nTransaction: ${txHash}` : ''}`);
       } else {
+        console.error('Blockchain registration failed:', result);
         alert('Failed to register FIR on chain: ' + (result && (result.error || result.message) ? (result.error || result.message) : 'Unknown error'));
       }
     } catch (error) {
@@ -368,7 +386,7 @@ const AdminDashboard = () => {
                 }}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
-                <option value="FIR Registered">FIR Registered</option>
+                <option value="Complaint Registered">Complaint Registered</option>
                 <option value="Under Investigation">Under Investigation</option>
                 <option value="Evidence Collected">Evidence Collected</option>
                 <option value="Case Closed">Case Closed</option>
@@ -590,18 +608,20 @@ const AdminDashboard = () => {
                           >
                             View Details
                           </button>
-                          <button
-                            onClick={() => handleRegisterOnChain(fir)}
-                            className="text-xs bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700 transition-colors"
-                          >
-                            Register on Chain
-                          </button>
+                          {fir.status === 'Complaint Registered' || fir.status === 'FIR Registered' ? (
+                            <button
+                              onClick={() => handleRegisterOnChain(fir)}
+                              className="text-xs bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700 transition-colors"
+                            >
+                              Register on Chain
+                            </button>
+                          ) : null}
                           <select
                             value={fir.status}
                             onChange={(e) => updateFIRStatus(fir._id, e.target.value)}
                             className="text-xs border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                           >
-                            <option value="FIR Registered">FIR Registered</option>
+                            <option value="Complaint Registered">Complaint Registered</option>
                             <option value="Under Investigation">Under Investigation</option>
                             <option value="Evidence Collected">Evidence Collected</option>
                             <option value="Case Closed">Case Closed</option>

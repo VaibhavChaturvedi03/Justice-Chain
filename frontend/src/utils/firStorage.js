@@ -223,6 +223,8 @@ export class FIRStorage {
   // Register FIR on blockchain by calling the blockchain backend
   static async registerFIROnChain(firId, token) {
     try {
+      console.log('registerFIROnChain: Fetching FIR data for:', firId);
+      
       // First fetch the FIR details from main backend
       const firResponse = await fetch(`${API_BASE_URL}/getFIR/${firId}`, {
         method: 'GET',
@@ -232,33 +234,56 @@ export class FIRStorage {
         }
       });
 
+      console.log('registerFIROnChain: FIR fetch response status:', firResponse.status);
+      
       if (!firResponse.ok) {
-        throw new Error(`Server error ${firResponse.status}`);
+        const errorText = await firResponse.text();
+        console.error('registerFIROnChain: FIR fetch failed:', errorText);
+        throw new Error(`Server error ${firResponse.status}: ${errorText}`);
       }
 
       const firDataResp = await firResponse.json();
+      console.log('registerFIROnChain: FIR data response:', firDataResp);
+      
       if (!firDataResp.success || !firDataResp.fir) {
-        throw new Error('Failed to fetch FIR data');
+        throw new Error('Failed to fetch FIR data: ' + JSON.stringify(firDataResp));
       }
 
       const payload = firDataResp.fir;
+      console.log('registerFIROnChain: Sending to blockchain backend:', payload);
 
-      // Send to blockchain backend service (runs on port 3000)
+      // Send to blockchain backend service (runs on port 3000) with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 minute timeout for blockchain confirmation
+      
+      console.log('registerFIROnChain: Making request to http://localhost:3000/api/uploadFIR');
+      
       const response = await fetch(`http://localhost:3000/api/uploadFIR`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        signal: controller.signal
       });
 
+      clearTimeout(timeoutId);
+      console.log('registerFIROnChain: Blockchain response received, status:', response.status);
+      
       if (!response.ok) {
-        throw new Error(`Blockchain service error ${response.status}`);
+        const errorText = await response.text();
+        console.error('registerFIROnChain: Blockchain service error:', errorText);
+        throw new Error(`Blockchain service error ${response.status}: ${errorText}`);
       }
 
       const data = await response.json();
+      console.log('registerFIROnChain: Success response from blockchain:', data);
       return data;
     } catch (error) {
+      if (error.name === 'AbortError') {
+        console.error('registerFIROnChain: Request timeout - blockchain backend not responding');
+        return { success: false, error: 'Blockchain backend timeout - is it running on port 3000?' };
+      }
       console.error('Error registering FIR on chain:', error);
       return { success: false, error: error.message };
     }

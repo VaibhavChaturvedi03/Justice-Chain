@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const PDFDocument = require('pdfkit');
 const dotenv = require('dotenv');
+const axios = require('axios');
 const { verifyToken, isCitizen, isAdmin } = require('../middleware/auth');
 const { uploadFileToPinata, uploadJSONToPinata, uploadMultipleFilesToPinata, getFileFromPinata } = require('../utils/pinataService');
 const Admin = require('../models/admin');
@@ -13,6 +14,65 @@ const router = express.Router();
 const FIR = require('../models/fir');
 const nodemailer = require('nodemailer');
 const { getMaxListeners } = require('events');
+
+// Public endpoint: Reverse Geocoding - convert coordinates to city/address
+// NO AUTHENTICATION REQUIRED - available to all users
+router.post('/reverseGeocode', async (req, res) => {
+    try {
+        const { lat, lng } = req.body;
+
+        if (!lat || !lng) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Latitude and longitude are required' 
+            });
+        }
+
+        console.log('Reverse geocoding request:', { lat, lng });
+
+        // Call reverse geocoding service using Nominatim (OpenStreetMap)
+        // More reliable and doesn't have strict rate limiting for basic queries
+        const geoResponse = await axios.get(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+            { 
+                timeout: 5000,
+                headers: {
+                    'User-Agent': 'JusticeChain/1.0'
+                }
+            }
+        );
+
+        const geoData = geoResponse.data;
+        const address = geoData.address || {};
+        
+        // Extract city from address - try different fields depending on what's available
+        const city = address.city || 
+                    address.town || 
+                    address.village || 
+                    address.county ||
+                    address.district ||
+                    'Unknown';
+
+        const displayName = geoData.display_name || 'Address not found';
+
+        console.log('Reverse geocoding success:', { city, address: displayName });
+
+        return res.json({
+            success: true,
+            city,
+            address: displayName,
+            lat,
+            lng,
+            rawData: address
+        });
+    } catch (error) {
+        console.error('Reverse geocoding error:', error.message);
+        return res.status(500).json({
+            success: false,
+            error: error.message || 'Failed to get location data'
+        });
+    }
+});
 
 function generateFIRNumber() {
     const year = new Date().getFullYear();
@@ -59,21 +119,30 @@ router.post('/uploadFIR', verifyToken, isCitizen, async (req, res) => {
                 mongoDBId: savedFIR._id.toString()
             };
 
+            console.log('🔄 Uploading FIR metadata to Pinata...');
             const pinataResult = await uploadJSONToPinata(
                 pinataMetadata,
                 `fir_${savedFIR.firNumber}.json`
             );
 
             if (pinataResult.success) {
+                console.log('✅ Pinata upload successful!');
+                console.log('IPFS Hash:', pinataResult.ipfsHash);
                 savedFIR.ipfsHash = pinataResult.ipfsHash;
                 savedFIR.ipfsMetadata = {
                     uploadedAt: new Date(),
                     fileName: `fir_${savedFIR.firNumber}.json`,
-                    contentType: 'application/json'
+                    contentType: 'application/json',
+                    gateway: `https://gateway.pinata.cloud/ipfs/${pinataResult.ipfsHash}`
                 };
+                await savedFIR.save();
+                console.log('✅ FIR saved with IPFS hash to MongoDB');
+            } else {
+                console.log('❌ Pinata upload failed:', pinataResult.error);
             }
         } catch (pinataError) {
-            console.error('Pinata upload error (non-blocking):', pinataError.message);
+            console.error('❌ Pinata upload error (non-blocking):', pinataError.message);
+            console.error('Stack:', pinataError.stack);
         }
 
         const pdfPath = path.join(pdfDir, `fir_${savedFIR._id}.pdf`);
@@ -732,8 +801,8 @@ router.post('/notifyRegistration', verifyToken, isAdmin, async (req, res) => {
         // SMTP configuration from environment
         const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
         const smtpPort = process.env.SMTP_PORT || 587;
-        const smtpUser = process.env.SMTP_USER;
-        const smtpPass = process.env.SMTP_PASS;
+        const smtpUser = 'vaibhavchaturvedi.work@gmail.com';
+        const smtpPass = 'odxtiwwyjefqalvv';
         const fromEmail = process.env.FROM_EMAIL || smtpUser;
 
         if (!smtpHost || !smtpUser || !smtpPass) {
@@ -784,7 +853,7 @@ router.post('/testEmail', verifyToken, isAdmin, async (req, res) => {
         const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
         const smtpPort = process.env.SMTP_PORT || 587;
         const smtpUser = 'vaibhavchaturvedi.work@gmail.com';
-        const smtpPass = odxtiwwyjefqalvv;
+        const smtpPass = 'odxtiwwyjefqalvv';
         const fromEmail = process.env.FROM_EMAIL || smtpUser;
 
         if (!smtpHost || !smtpUser || !smtpPass) {
@@ -808,8 +877,6 @@ router.post('/testEmail', verifyToken, isAdmin, async (req, res) => {
     }
 });
 
-module.exports = router;
-
 // Debug endpoint (admin-only) to inspect FIR counts and admin state quickly
 // Note: This is for development only; remove or protect in production.
 router.get('/debug/admin-firs', verifyToken, isAdmin, async (req, res) => {
@@ -824,4 +891,6 @@ router.get('/debug/admin-firs', verifyToken, isAdmin, async (req, res) => {
         return res.status(500).json({ success: false, error: err.message });
     }
 });
+
+module.exports = router;
 

@@ -64,41 +64,77 @@ app.post('/api/uploadFIR', async (req, res) => {
             else severity = 1; 
         } catch(AIerror){
             console.warn("classification failed , setting severity to 1");
+            severity = 1;
         }
 
         const pinataUrl = `https://api.pinata.cloud/pinning/pinJSONToIPFS`;
 
-        const pinataResponse = await axios.post(pinataUrl, {...firData , severity}, {
-            headers: {
-                'Content-Type': 'application/json',
-                pinata_api_key: PINATA_API_KEY,
-                pinata_secret_api_key: PINATA_SECRET_API_KEY,
-            },
-        });
-
-        const ipfsHash = pinataResponse.data.IpfsHash;
+        let ipfsHash = null;
+        try {
+            const pinataResponse = await axios.post(pinataUrl, {...firData , severity}, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    pinata_api_key: PINATA_API_KEY,
+                    pinata_secret_api_key: PINATA_SECRET_API_KEY,
+                },
+                timeout: 10000 // 10 second timeout
+            });
+            ipfsHash = pinataResponse.data.IpfsHash;
+            console.log('Pinata upload successful:', ipfsHash);
+        } catch(pinataErr) {
+            console.warn("Pinata upload failed:", pinataErr.message);
+            // Use the existing IPFS hash from the FIR if available
+            ipfsHash = firData.ipfsHash || 'ipfs_pending_' + Date.now();
+        }
 
         const incidentDetailsJson = JSON.stringify(firData.incidentDetailsJson || firData || {});
 
-        const tx = await contract.createFIR(
-            firData.incidentType || firData.title || 'Untitled FIR',
-            firData.incidentDescription || firData.description || 'No description',
-            severity,
-            ipfsHash,
-            incidentDetailsJson
-        );
-        console.log("Sending to blockchain:", { severity, firData });
+        try {
+            console.log('Creating FIR on blockchain...');
+            
+            // Create a timeout promise that rejects after 60 seconds
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Blockchain transaction timeout - exceeds 60 seconds')), 60000)
+            );
+            
+            const tx = await Promise.race([
+                contract.createFIR(
+                    firData.incidentType || firData.title || 'Untitled FIR',
+                    firData.incidentDescription || firData.description || 'No description',
+                    severity,
+                    ipfsHash,
+                    incidentDetailsJson
+                ),
+                timeoutPromise
+            ]);
+            
+            console.log("Transaction sent, waiting for confirmation:", tx.hash);
+            
+            // Wait for confirmation with timeout
+            const receiptPromise = tx.wait();
+            const receipt = await Promise.race([
+                receiptPromise,
+                new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Transaction confirmation timeout - exceeds 120 seconds')), 120000)
+                )
+            ]);
+            
+            console.log('Transaction mined:', receipt.hash);
 
-        await tx.wait();
-        console.log('Transaction mined');
-
-        res.json({
-            success: true,
-            message: 'FIR successfully uploaded and saved on blockchain',
-            ipfsHash,
-            txHash: tx.hash,
-        });
-
+            res.json({
+                success: true,
+                message: 'FIR successfully uploaded and saved on blockchain',
+                ipfsHash,
+                txHash: tx.hash,
+            });
+        } catch(blockchainErr) {
+            console.error('Blockchain error:', blockchainErr.message);
+            res.status(500).json({
+                success: false,
+                message: 'Error registering on blockchain',
+                error: blockchainErr.message,
+            });
+        }
     } catch (error) {
         console.error('Error uploading FIR:', error.message);
         res.status(500).json({
