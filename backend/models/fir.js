@@ -27,7 +27,7 @@ const FIRSchema = new mongoose.Schema({
   severity: Number,
   urgencyLevel: String,
   filedByUser: Object,
-  status: { type: String, default: 'FIR Registered' },
+  status: { type: String, default: 'Complaint Registered' },
   filedDate: { type: String, default: () => new Date().toISOString().split('T')[0] },
   lastUpdated: { type: String, default: () => new Date().toISOString().split('T')[0] },
   timeline: { type: Array, default: [] },

@@ -33,8 +33,8 @@ router.post('/uploadFIR', verifyToken, isCitizen, async (req, res) => {
             timeline: [
                 {
                     date: new Date().toISOString().split('T')[0],
-                    status: 'FIR Registered',
-                    description: 'FIR registered successfully in the system',
+                    status: 'Complaint Registered',
+                    description: 'Complaint registered successfully in the system',
                     officer: 'System Administrator'
                 }
             ]
@@ -174,7 +174,7 @@ router.post('/uploadFIR', verifyToken, isCitizen, async (req, res) => {
         doc.moveDown(0.5);
         doc.fontSize(12).font('Helvetica-Bold').text('6. Case Status');
         doc.moveDown(0.2);
-        twoCol('Current Status', savedFIR.status || 'FIR Registered');
+        twoCol('Current Status', savedFIR.status || 'Complaint Registered');
         twoCol('Urgency Level', savedFIR.urgencyLevel || 'N/A');
 
         doc.moveDown(0.5);
