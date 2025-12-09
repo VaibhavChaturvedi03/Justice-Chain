@@ -136,7 +136,7 @@ const AdminDashboard = () => {
         if (newStatus === 'FIR Registered') {
           try {
             // Prompt admin for citizen wallet address (required to mint NFT)
-            const citizenAddress = window.prompt('Enter citizen wallet address (0x...) to mint NFT for this FIR:');
+            const citizenAddress = "0x2fe21766cb580db74950462bac80b5e9163cab6b";
             if (!citizenAddress) {
               alert('Citizen wallet address is required to register FIR on chain.');
             } else {
@@ -195,7 +195,7 @@ const AdminDashboard = () => {
       if (!confirmRegister) return;
 
       // Prompt for citizen address and call register helper
-      const citizenAddress = window.prompt('Enter citizen wallet address (0x...) to mint NFT for this FIR:');
+      const citizenAddress = "0x2fe21766cb580db74950462bac80b5e9163cab6b";
       if (!citizenAddress) {
         alert('Citizen wallet address is required to register FIR on chain.');
         return;
